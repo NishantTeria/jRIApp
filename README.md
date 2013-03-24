@@ -42,7 +42,7 @@ applications. The only one which can be used for this purpose and works in brows
 but it is not based on javascript and needs plugin.
 </b>
 
-You are welcome to use it in yours applications.
+You are welcome to use it in your applications.
 
 --
 Maxim V. Tsapov
