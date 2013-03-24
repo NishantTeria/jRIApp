@@ -1,7 +1,7 @@
 jRIApp
 ======
 
-RIA application framework for building LOB applications
+<b>RIA application framework for building LOB applications</b>
 
 
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
@@ -33,3 +33,17 @@ For the creation of data centric applications the framework has GUI controls for
 and submitting changes to the server with the data passing through data validation and authorization stages of data processing,
  returning autogenerating field values - such as primary keys, timestamp values. 
 The framework includes the ability to track changes (auditing) and do the error logging.
+
+<b>
+This framework is sufficiently tested (more than a year) on real world LOB applications. I developed it for myself and decided to share it with the
+community. I don't know any other frameworks on the market  with the capabilities of this framework. The three which
+i'm aware of is the KnockOut.js, the Breeze.je, and  the Upshot.js. But they all don't fullfill the purpose of developing the LOB
+applications. The only one which can be used for this purpose and works in browsers is Microsoft Silverlight with WCF RIA services,
+but it is not based on javascript and needs plugin.
+</b>
+
+You are welcome to use it in yours applications.
+
+--
+Maxim V. Tsapov
+Moscow, Russian Federation 
