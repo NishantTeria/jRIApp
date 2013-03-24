@@ -45,5 +45,5 @@ but it is not based on javascript and needs plugin.
 You are welcome to use it in your applications.
 
 --
-Maxim V. Tsapov
+Maxim V. Tsapov<br/>
 Moscow, Russian Federation 
