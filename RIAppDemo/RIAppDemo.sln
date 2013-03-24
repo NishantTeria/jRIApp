@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIAppDemo", "RIAppDemo\RIAppDemo.csproj", "{7500EB0A-9796-40AB-9BF3-3CDF7208AC38}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIAPP.DataService", "RIAPP.DataService\RIAPP.DataService.csproj", "{5FA08D23-6BAE-47AD-930B-A11EAFFF11DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIAPP.DataService.EF", "RIAPP.DataService.EF\RIAPP.DataService.EF.csproj", "{87ABD62E-35F7-419B-B77F-70C3FD647CCD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIAPP.DataService.LinqSql", "RIAPP.DataService.LinqSql\RIAPP.DataService.LinqSql.csproj", "{8603C41C-DC36-4902-B4FE-B0315D28FB05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIAppDemo.DAL", "RIApp.DAL\RIAppDemo.DAL.csproj", "{068797EC-D63A-4F1C-8B1C-AEFEABE171E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIAppDemo.BLL", "RIApp.BLL\RIAppDemo.BLL.csproj", "{16C37FAB-5DC5-4728-84ED-2A4D710AC985}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIAPP.DataService.Mvc", "RIAPP.DataService.Mvc\RIAPP.DataService.Mvc.csproj", "{BB05E399-1F91-4AFF-8218-D2595DA49E1B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7500EB0A-9796-40AB-9BF3-3CDF7208AC38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7500EB0A-9796-40AB-9BF3-3CDF7208AC38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7500EB0A-9796-40AB-9BF3-3CDF7208AC38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7500EB0A-9796-40AB-9BF3-3CDF7208AC38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FA08D23-6BAE-47AD-930B-A11EAFFF11DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FA08D23-6BAE-47AD-930B-A11EAFFF11DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FA08D23-6BAE-47AD-930B-A11EAFFF11DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FA08D23-6BAE-47AD-930B-A11EAFFF11DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87ABD62E-35F7-419B-B77F-70C3FD647CCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87ABD62E-35F7-419B-B77F-70C3FD647CCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87ABD62E-35F7-419B-B77F-70C3FD647CCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87ABD62E-35F7-419B-B77F-70C3FD647CCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8603C41C-DC36-4902-B4FE-B0315D28FB05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8603C41C-DC36-4902-B4FE-B0315D28FB05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8603C41C-DC36-4902-B4FE-B0315D28FB05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8603C41C-DC36-4902-B4FE-B0315D28FB05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{068797EC-D63A-4F1C-8B1C-AEFEABE171E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{068797EC-D63A-4F1C-8B1C-AEFEABE171E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{068797EC-D63A-4F1C-8B1C-AEFEABE171E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{068797EC-D63A-4F1C-8B1C-AEFEABE171E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16C37FAB-5DC5-4728-84ED-2A4D710AC985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16C37FAB-5DC5-4728-84ED-2A4D710AC985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16C37FAB-5DC5-4728-84ED-2A4D710AC985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16C37FAB-5DC5-4728-84ED-2A4D710AC985}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB05E399-1F91-4AFF-8218-D2595DA49E1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB05E399-1F91-4AFF-8218-D2595DA49E1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB05E399-1F91-4AFF-8218-D2595DA49E1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB05E399-1F91-4AFF-8218-D2595DA49E1B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

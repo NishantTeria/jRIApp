@@ -1,0 +1,102 @@
+﻿@using System.Text
+@using RIAppDemo.BLL.DataServices
+@using RIAppDemo.Utils
+@{
+    Layout = "~/Views/Shared/_LayoutDemo.cshtml";
+}
+@{
+    ViewBag.Title = "Bindings usage Demo";
+}
+
+@section CssImport
+{
+}
+
+@section JSImport
+{
+    <script src="@Url.Content("~/Scripts/RIAppDemo/common.js",true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/bindingsDemo.js",true)" type="text/javascript"></script>
+}
+<style type="text/css">
+#demoHeader label
+{
+    color: Blue;
+}
+
+#demoContent
+{
+    overflow:visible; 
+    height:600px;
+    vertical-align:top;
+    position:relative;
+}
+
+#demoContent > fieldset {border-radius: 5px;}
+#demoContent fieldset > legend {color:Blue; font-weight:bold;}
+#demoContent .radioItem {display:inline-block; margin:4px; padding:4px;}
+
+.stackPanelItem { width:170px;}
+.stackPanelItem fieldset {border-radius: 5px;}
+.stackPanelItem fieldset legend {color:Blue; font-weight:bold;}
+</style>
+
+
+<script type="text/javascript">
+    $(document).ready(function ($) {
+        RIAPP.global.addHandler('error', function (sender, args) {
+            alert(args.error.message);
+        });
+
+        var fn_Main = function (app) {
+            //initialize images folder path
+            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+
+            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+            //create objects which are in our custom modules
+            app.VM.testObject1 = app.getType('custom.TestObject').create('Test Initial Value');
+
+            //usage example: creating binding in code
+            app.getType('Binding').create({ sourcePath: 'testProperty', targetPath: 'testProperty2',
+                source: app.VM.testObject1, mode: 'OneWay',
+                target: app.VM.testObject1, converter: RIAPP.global.getConverter('uppercaseConverter'), converterParam: null
+            });
+        }; //end fn_Main
+
+   
+            //create ria application without dbContext, and supply an array of our custom modules
+        var app = RIAPP.Application.create({ app_name: 'default', 
+            createDbContext: false,
+            moduleNames: ['common', 'bindingsDemoMod']
+        });
+
+           app.addHandler('error', function (sender, data) {
+               data.isHandled = true;
+               if (!app.VM.errorVM) {
+                   alert(data.error.message);
+                   return;
+               }
+               app.VM.errorVM.error = data.error;
+               app.VM.errorVM.showDialog();
+            });
+
+            app.startUp(fn_Main);
+    });
+</script>
+
+<h2  style="display:inline-block;">@ViewBag.Title</h2>
+
+<!--using dataform is convenient because it set datacontext scope for all its content-->
+<div id="demoContent">
+<fieldset>
+    <legend>HTML elements bounded to TestObject properties</legend>
+     <div style="margin:5px 5px 5px 0px;">
+        <label>testProperty: </label>
+        <!--without updateOnKeyUp option, value is updated only when textbox looses focus-->
+        <input type="text" data-bind="{this.value,to=testProperty,mode=TwoWay,source=VM.testObject1}" data-view="options:{updateOnKeyUp=true}" style="width:250px"/>
+        &nbsp;<span data-bind="{this.value,to=testProperty2,mode=OneWay,source=VM.testObject1}" ></span>
+     </div>
+     <div style="margin:5px 5px 5px 0px;"><label for="months">Months: </label><select size="1" style="width:150px" data-bind="{this.dataSource,to=months,mode=OneWay,source=VM.testObject1}{this.selectedValue,to=month,mode=TwoWay,source=VM.testObject1}" data-view="options:{valuePath=key,textPath=val}"></select></div>
+     <div style="margin:5px 5px 5px 0px;"><label for="sends">Formats: </label><select size="1" style="width:220px" data-bind="{this.dataSource,to=formats,mode=OneWay,source=VM.testObject1}{this.selectedValue,to=format,mode=TwoWay,source=VM.testObject1}" data-view="options:{valuePath=key,textPath=val}"></select></div>
+</fieldset>
+ <a class="btn btn-info btn-small" style="margin:5px 5px 5px 0px;" data-bind="{this.command,to=testCommand,mode=OneWay,source=VM.testObject1}{this.toolTip,to=testToolTip,mode=OneWay,source=VM.testObject1}">Test command</a>
+</div>

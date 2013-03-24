@@ -1,0 +1,115 @@
+﻿@using System.Text
+@using RIAPP.DataService
+@using RIAppDemo.BLL.DataServices
+@using RIAppDemo.Utils
+
+@{
+    Layout = "~/Views/Shared/_LayoutDemo.cshtml";
+}
+@{
+    ViewBag.Title = "Folder Browser Demo";
+}
+
+@section CssImport
+{
+   <link href="@Url.Content("~/Scripts/dynatree/src/skin/ui.dynatree.css", true)" rel="stylesheet" type="text/css" />
+}
+
+@section JSImport
+{
+    <script src="@Url.Content("~/Scripts/dynatree/src/jquery.dynatree.js", true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/common.js",true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/browserDemo.js",true)" type="text/javascript"></script>
+}
+<style type="text/css">
+#demoHeader label
+{
+    color: Blue;
+}
+
+#demoContent
+{
+    overflow:visible; 
+    height:600px;
+    vertical-align:top;
+    position:relative;
+}
+
+#tree
+{
+    height: 600px;
+    overflow:visible;
+    padding:5px;
+}
+
+#demoContent > fieldset {border-radius: 5px;}
+#demoContent fieldset > legend {color:Blue; font-weight:bold;}
+#demoContent .radioItem {display:inline-block; margin:4px; padding:4px;}
+
+.stackPanelItem { width:170px;}
+.stackPanelItem fieldset {border-radius: 5px;}
+.stackPanelItem fieldset legend {color:Blue; font-weight:bold;}
+</style>
+
+
+<script type="text/javascript">
+    $(document).ready(function ($) {
+        RIAPP.global.addHandler('error', function (sender, args) {
+            debugger;
+            alert(args.error.message);
+        });
+
+        var fn_Main = function (app) {
+            //initialize images folder path
+            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+            var FolderBrowser= app.getType('custom.FolderBrowser');
+            //initialize static properties shared between instances
+            FolderBrowser.service_url = '@Url.RouteUrl("Default",new {controller="FolderBrowserService", action=""})';
+            FolderBrowser.metadata= @Html.Action("Metadata", "FolderBrowserService");
+            app.VM.fbrowserVM1 = app.getType('custom.FolderBrowserVM').create(false);
+            app.VM.fbrowserVM2 = app.getType('custom.FolderBrowserVM').create(true);
+
+        }; //end fn_Main
+
+   
+            //create ria application without dbContext, and supply an array of our custom modules
+          var app = RIAPP.Application.create({ app_name: 'default', 
+          createDbContext: false, 
+          moduleNames: ['common','browserDemoMod'] });
+
+           app.addHandler('error', function (sender, data) {
+                data.isHandled = true;
+                if (!app.VM.errorVM)
+                {
+                  alert(data.error.message);
+                  return;
+                }
+                if (data && data.error)
+                {
+                    app.VM.errorVM.error = data.error;
+                }
+                else
+                    app.VM.errorVM.error = Error('Application error!');
+                app.VM.errorVM.showDialog();
+            });
+
+           app.startUp(fn_Main);
+   });//$(document).ready
+</script>
+
+<h2 style="display:inline-block;">@ViewBag.Title</h2>
+
+<!--using dataform is convenient because it set datacontext scope for all its content-->
+<div id="demoContent">
+   <a class="btn btn-info btn-small" style="margin:5px 5px 5px 0px;" data-bind="{this.command,to=dialogCommand,mode=OneWay,source=VM.fbrowserVM1}">Open folder browser</a>
+   <a class="btn btn-info btn-small" style="margin:5px 5px 5px 0px;" data-bind="{this.command,to=dialogCommand,mode=OneWay,source=VM.fbrowserVM2}">Open file browser</a>
+</div>
+
+@section RiaTemplates
+{
+   <div id="treeTemplate">
+      <div data-name="tree" style="height:95%;"></div>
+      <span style="position:absolute;left:15px;bottom:5px;font-weight:bold;font-size:10px;color:Blue;" data-bind="{this.text,to=selectedItem.fullPath,mode=OneWay}"></span>
+  </div>
+}

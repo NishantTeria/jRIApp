@@ -1,0 +1,426 @@
+﻿@using System.Text
+@using RIAPP.DataService
+@using RIAppDemo.BLL.DataServices
+@using RIAppDemo.Utils
+@{
+    Layout = "~/Views/Shared/_LayoutDemo.cshtml";
+}
+@{
+    ViewBag.Title = "DataGrid Demo ";
+}
+
+@section CssImport
+{
+}
+
+@section JSImport
+{
+    <script src="@Url.Content("~/Scripts/RIAppDemo/common.js",true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/header.js",true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/gridDemo.js",true)" type="text/javascript"></script>
+}
+<style type="text/css">
+#demoHeader label
+{
+    color: Blue;
+}
+
+#demoContent
+{
+    overflow:visible; 
+    height:600px;
+    vertical-align:top;
+}
+
+.productTableWrap {height:100%; width:100%}
+.productTableContainer {}
+.productTableHeader {}
+
+.number-display {color:Blue; font-weight: bold;}
+.number-edit input[type="text"] {color:Black;}
+
+.name-display {color:Blue; font-weight: bold;}
+.name-edit input[type="text"] {color:Black;}
+.name-edit textarea {color:Black;}
+
+.listbox-edit select {width:75%;}
+
+.selectorCol { vertical-align:middle;}
+.selectorCell {text-align:center;vertical-align:middle}
+
+.rowInactive { text-decoration:line-through; color: Gray; }
+
+table.ria-data-table tr:nth-child(even) {
+    background-color: #ECF2F6;
+}
+</style>
+
+<script type="text/javascript">
+    $(document).ready(function ($) {
+        //global error handler - the last resort (typically display message to the user)
+        RIAPP.global.addHandler('error', function (sender, args) {
+            debugger;
+            alert(args.error.message);
+        });
+       
+        var fn_Main = function (app) {
+            //initialize images folder path
+            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+
+            //create view models which are in our custom modules
+            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+            app.VM.headerVM = app.getType('custom.HeaderVM').create();
+            app.VM.productVM = app.getType('custom.ProductViewModel').create();
+            app.VM.uploadVM = app.getType('custom.UploadThumbnailVM').create('@Url.RouteUrl("Default",new {controller="Upload", action="ThumbnailUpload"})');
+            //adding event handler for our custom event
+            app.VM.uploadVM.addHandler('files_uploaded',function(s,a){
+                a.product.refresh(); //need to update ThumbnailPhotoFileName
+            });
+
+            //example of ajax call to load lookups - first load lookups, then load products
+            //at the end it displays in an alert out of band data returned from the server (see ReadProduct data service method)
+            /*
+             app.VM.productVM.filter.load().pipe(function()
+             {
+                return app.VM.productVM.load();}
+             ).pipe(function(extrainfo){alert(extrainfo.test);},function(){alert('load failed');});
+            */
+
+            //load lookups by embedding json data in the page (it is faster then above commented load pipeline)
+            //if you want to try ajax load, then comment these below lines using server side commenting 
+                @*example of server side razor style comment*@
+            //and uncomment the above with loading of lookups by ajax calls
+            app.VM.productVM.filter.modelData = @Html.Action("ProductModelData", "RIAppDemoService");
+            app.VM.productVM.filter.categoryData = @Html.Action("ProductCategoryData", "RIAppDemoService");
+            app.VM.productVM.load().pipe(function(loadRes){alert(loadRes.outOfBandData.test);},function(){alert('load failed');});
+
+        }; //end fn_Main
+
+          //create application instance
+           var app = RIAPP.Application.create({ app_name: 'default', //each application's name on the page must be unique
+                service_url: '@Url.RouteUrl("Default",new {controller="RIAppDemoService", action=""})',
+                metadata: @Html.Action("Metadata", "RIAppDemoService"),
+                createDbContext: true, //we want that the application  created DbContext instance
+                moduleNames:['common','header','gridDemo'] //custom modules which will be initialized
+            });
+
+            //here we could process application's errors
+        app.addHandler('error', function (sender, data) {
+                debugger;
+                data.isHandled = true;
+                if (!app.VM.errorVM)
+                {
+                  alert(data.error.message);
+                  return;
+                }
+                app.VM.errorVM.error = data.error;
+                app.VM.errorVM.showDialog();
+            });
+
+            //define calculated fields for entities in the application's event handler
+            app.addHandler('define_calc', function (sender, data) {
+                if (data.dbSetName == 'Product' && data.fieldName == 'IsActive') {
+                    data.getFunc = function () {
+                        return !this.SellEndDate;
+                    };
+                }
+            });
+
+            //start application - fn_Main will init all view models
+            //at the end (after executing fn_Main)  this method performs databinding
+            app.startUp(fn_Main);
+    });
+
+</script>
+
+
+<h2  style="display:inline-block;">@ViewBag.Title</h2>
+<header id="title" style="width:99%; border:1px Solid LightBlue; padding:5px;margin-bottom:5px;-moz-border-radius: 4px;border-radius:4px;">
+<a href="#" id="expander" style="margin-left:2px;" data-bind="{this.command,to=expanderCommand,mode=OneWay,source=VM.headerVM}" data-view="name=expander"></a>
+<span style="margin-left:5px;">Filter</span>
+</header>
+<form id="demoHeader" data-bind="{this.dataContext,source=VM.productVM}" data-view="name=dataform">
+    <table>
+        <tr>
+            <td>
+              <label for="prodNum">Product Number:</label>
+              <input type="text" id="prodNum" placeholder="Product number" data-bind="{this.value,to=filter.prodNumber,mode=TwoWay}{this.toolTip,to=filter.searchTextToolTip}" />
+            </td>
+            <td>
+               <label for="prodName">Name:</label>
+               <input type="text" id="prodName" placeholder="Name" data-bind="{this.value,to=filter.name,mode=TwoWay}{this.toolTip,to=filter.searchTextToolTip}" />
+            </td>
+            <td>
+               <label for="prodMCat">Main Category:</label>
+               <select id="prodMCat" size="1" class="span3" data-bind="{this.dataSource,to=filter.ParentCategories}{this.selectedValue,to=filter.parentCategoryID,mode=TwoWay}" data-view="options:{valuePath=ProductCategoryID,textPath=Name}"></select>
+            </td>
+            <td>
+                <label for="prodSCat">Sub Category:</label>
+                <select id="prodSCat" size="1" class="span2" data-bind="{this.dataSource,to=filter.ChildCategories}{this.selectedValue,to=filter.childCategoryID,mode=TwoWay}{this.selectedItem,to=filter.selectedCategory,mode=TwoWay}{this.toolTip,to=filter.selectedCategory.Name}" data-view="options:{valuePath=ProductCategoryID,textPath=Name}"></select>
+            </td>
+             <td>
+                <label for="prodMod">Model:</label>
+                <select id="prodMod" size="1" class="span2" data-bind="{this.dataSource,to=filter.ProductModels}{this.selectedValue,to=filter.modelID,mode=TwoWay}{this.selectedItem,to=filter.selectedModel,mode=TwoWay}{this.toolTip,to=filter.selectedModel.Name}" data-view="options:{valuePath=ProductModelID,textPath=Name}"></select>
+            </td>
+        </tr>
+    </table>
+
+    <a id="btn_filter" class="btn btn-info btn-small" data-bind="{this.command,to=loadCommand}"><i class="icon-search"></i>&nbsp;Filter</a>
+    <a id="btn_reset" class="btn btn-info btn-small" data-bind="{this.command,to=filter.resetCommand}"><i class="icon-retweet"></i>&nbsp;Reset</a>
+</form>
+
+<div id="demoContent" data-bind="{this.isBusy,to=dbContext.isBusy}" data-view="name=busy_indicator">
+    <div style="height:85%; vertical-align:top;">
+    <table data-app='default' data-name="gridProducts" data-bind="{this.dataSource,to=dbSet,source=VM.productVM}{this.propChangedCommand,to=propChangeCommand,source=VM.productVM}" 
+    data-view="options={wrapCss:productTableWrap,containerCss:productTableContainer,headerCss:productTableHeader,rowStateField:IsActive,isHandleAddNew:true,isCanEdit:true,editor:{templateID:productEditTemplate,width:550,height:650,submitOnOK:true,title:'Product editing'},details:{templateID:productDetailsTemplate}}">
+        <thead>
+        <tr>
+            <th data-column="width:35px,type:row_expander"/>
+            <th data-column="width:50px,type:row_actions"/>
+            <th data-column="width:40px,type:row_selector,rowCellCss:selectorCell,colCellCss:selectorCol"/>
+            <th data-column="width:100px,sortable:true,title:ProductNumber" data-content="fieldName:ProductNumber,css:{displayCss:'number-display',editCss:'number-edit'}"/>
+            <th data-column="width:25%,sortable:true,title:Name" data-content="fieldName:Name"/>
+            <th data-column="width:90px,title:'Weight',sortable:true" data-content="fieldName:Weight"/>
+            <th data-column="width:15%,title=CategoryID,sortable:true,sortMemberName=ProductCategoryID" data-content= "fieldName=ProductCategoryID,lookup:{dataSource=dbContext.dbSets.ProductCategory,valuePath=ProductCategoryID,textPath=Name}"/>
+            <th data-column="width:100px,sortable:true,title='SellStartDate'" data-content="fieldName=SellStartDate"/>
+            <th data-column="width:100px,sortable:true,title='SellEndDate'" data-content="fieldName=SellEndDate"/>
+            <th data-column="width:90px,sortable:true,title='IsActive'" data-content="fieldName=IsActive"/>
+            <th data-column="width:10%,title=Size,sortable:true,sortMemberName=Size" data-content="template={displayID=sizeDisplayTemplate,editID=sizeEditTemplate}"/>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    </div>
+     <div style="margin-top:40px;text-align:left; border:none;width:100%;height:15%">
+        <!--pager-->
+        <div style="float:left;" data-bind="{this.dataSource,to=dbSet,source=VM.productVM}" data-view="name=pager,options={sliderSize:20,hideOnSinglePage=false}"></div>
+        <div style="float:left; padding-left:10px;padding-top:10px;"><span>Total:</span>&nbsp;<span data-bind="{this.value,to=totalCount,source=VM.productVM.dbSet}"></span>,&nbsp;&nbsp;<span>Selected:</span>&nbsp;<span data-bind="{this.value,to=selectedCount,source=VM.productVM}"></span></div>
+
+        <button class="btn btn-info btn-small" style="float:right;" data-bind="{this.command,to=addNewCommand,mode=OneWay,source=VM.productVM}"><i class="icon-plus"></i>&nbsp;New Product</button>
+     </div>
+ </div>
+ 
+@section RiaTemplates
+{
+    <div id="sizeDisplayTemplate">
+        <span>Size:</span> <span style="color: Blue; margin-left: 5px;" data-bind="{this.value,to=Size}">
+        </span>
+    </div>
+    <div id="sizeEditTemplate">
+        <span>Size:</span>
+        <input type="text" style="width: 150px; margin-left: 5px;" data-bind="{this.value,to=Size,mode=TwoWay}" />
+    </div>
+    <div id="productEditTemplate">
+        <div style="width: 470px; font-size: 12px;" data-bind="{this.dataContext,mode=OneWay}"
+            data-view="name=dataform">
+            <table style="width: 95%">
+                <thead>
+                    <tr>
+                        <th>
+                            Название
+                        </th>
+                        <th>
+                            Значение
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            ID:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:ProductID"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Name:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:Name,css:{displayCss:'name-display',editCss:'name-edit'},multyline:{rows:3,cols:20,wrap:hard}">
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            ProductNumber:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:ProductNumber"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Color:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:Color"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Cost:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:StandardCost"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Price:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:ListPrice"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Size:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:Size"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Weight:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:Weight"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Category:
+                        </td>
+                        <td>
+                            <span data-content="fieldName=ProductCategoryID,lookup:{dataSource=dbContext.dbSets.ProductCategory,valuePath=ProductCategoryID,textPath=Name},css:{editCss:'listbox-edit'}">
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Model:
+                        </td>
+                        <td>
+                            <span data-content="fieldName=ProductModelID,lookup:{dataSource=dbContext.dbSets.ProductModel,valuePath=ProductModelID,textPath=Name},css:{editCss:'listbox-edit'}">
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            SellStartDate:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:SellStartDate"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            SellEndDate:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:SellEndDate"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            DiscontinuedDate:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:DiscontinuedDate"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            rowguid:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:rowguid"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            When Modified:
+                        </td>
+                        <td>
+                            <span data-content="fieldName=ModifiedDate"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            IsActive:
+                        </td>
+                        <td>
+                            <span data-content="fieldName=IsActive"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @*Grid details product template*@
+    <div id="productDetailsTemplate">
+        <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.productVM"
+            data-view="name='tabs'">
+            <div id="myTabs">
+                <ul>
+                    <li><a href="#a">Tab 1</a></li>
+                    <li><a href="#b">Tab 2</a></li>
+                </ul>
+                <div id="a">
+                    <span>Product Name: </span>
+                    <input type="text" style="color: Green; width: 220px; margin: 5px;" data-bind="{this.value,to=Name,mode=TwoWay}" />
+                    <br />
+                    <a class="btn btn-info btn-small" data-bind="{this.command,to=testInvokeCommand,source=VM.productVM}{this.commandParam}"
+                        data-view="options={tip='Invokes method on the server and displays result'}">
+                        Click me to invoke service method</a>
+                </div>
+                <div id="b">
+                    <img style="float:left" data-bind="{this.id,to=ProductID}{this.fileName,to=ThumbnailPhotoFileName}" alt="Product Image" src="" data-view="name=fileImage,options={baseUri:'@Url.RouteUrl("Default", new { controller = "Download", action = "ThumbnailDownload" })'}"/><br />
+                    <div style="float: left; margin-left: 8px;">
+                        click to download the image: <a class="btn btn-info btn-small" data-bind="{this.text,to=ThumbnailPhotoFileName}{this.id,to=ProductID}" data-view="name=fileLink,options={baseUri:'@Url.RouteUrl("Default", new { controller = "Download", action = "ThumbnailDownload" })'}">
+                        </a>
+                    </div>
+                    <div style="clear: both; padding: 5px 0px 5px 0px;">
+                        <!--bind commandParameter to current datacontext, that is product entity-->
+                        <a class="btn btn-info btn-small" data-name="upload" data-bind="{this.command,to=dialogCommand,source=VM.uploadVM}{this.commandParam}"
+                            data-view="options={tip='click me to upload product thumbnail photo'}">Upload product
+                            thumbnail</a>
+                    </div>
+                </div>
+            </div>
+            <!--myTabs-->
+        </div>
+    </div>
+    @*upload thumbnail dialog template*@
+    <div id="uploadTemplate" data-bind="{this.command,to=templateCommand,source=VM.uploadVM}"
+        data-view="name=template">
+        <!--dummy form action to satisfy HTML5 specification-->
+        <form data-name="uploadForm" action='#'>
+        <div data-name="uploadBlock">
+            <input data-name="files-to-upload" type="file" style="visibility: hidden;" />
+            <div class="input-append">
+                <input data-name="files-input" class="span4" type="text">
+                <a data-name="btn-input" class="btn btn-info btn-small"><i class="icon-folder-open">
+                </i></a><a data-name="btn-load" class="btn btn-info btn-small" data-bind="{this.command,to=uploadCommand}"
+                    data-view="options={tip='Click to upload a file'}">Upload</a>
+            </div>
+            <span>File info:</span><text>&nbsp;</text><div style="display: inline-block" data-bind="{this.html,to=fileInfo}">
+            </div>
+            <div data-name="progressDiv">
+                <progress data-name="progressBar" class="span4" value="0" max="100">
+                </progress><span data-name="percentageCalc"></span>
+            </div>
+        </div>
+        </form>
+    </div>
+    @*test service invoke method result display*@
+    <div id="invokeResultTemplate">
+        <div style="width: 100%; height: 100%; background-color: White; color: Blue;">
+            <div style="display: inline-block" data-bind="{this.html,to=invokeResult}">
+            </div>
+        </div>
+    </div>
+}

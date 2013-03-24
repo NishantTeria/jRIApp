@@ -1,0 +1,118 @@
+﻿@using System.Text
+@using RIAppDemo.BLL.DataServices
+@using RIAppDemo.Utils
+@{
+    Layout = "~/Views/Shared/_LayoutDemo.cshtml";
+}
+@{
+    ViewBag.Title = "Collections Demo";
+}
+
+@section CssImport
+{
+}
+
+@section JSImport
+{
+    <script src="@Url.Content("~/Scripts/RIAppDemo/common.js",true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/collectionsDemo.js",true)" type="text/javascript"></script>
+}
+<style type="text/css">
+#demoHeader label
+{
+    color: Blue;
+}
+
+#demoContent
+{
+    overflow:visible; 
+    height:600px;
+    vertical-align:top;
+    position:relative;
+}
+
+#demoContent > fieldset {border-radius: 5px;}
+#demoContent fieldset > legend {color:Blue; font-weight:bold;}
+#demoContent .radioItem {display:inline-block; margin:4px; padding:4px;}
+
+.stackPanelItem { width:170px;}
+.stackPanelItem fieldset {border-radius: 5px;}
+.stackPanelItem fieldset legend {color:Blue; font-weight:bold;}
+</style>
+
+
+<script type="text/javascript">
+    $(document).ready(function ($) {
+        RIAPP.global.addHandler('error', function (sender, args) {
+            alert(args.error.message);
+        });
+
+        var fn_Main = function (app) {
+            //initialize images folder path
+            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+            //create view models which are in our custom modules
+            app.VM.demoVM = app.getType('custom.RadioDemo2VM').create();
+        }; //end fn_Main
+
+   
+        //create ria application without dbContext
+        var app = RIAPP.Application.create({ app_name: 'default', 
+            createDbContext: false,
+            moduleNames: ['common', 'collectionsDemoModule']
+        });
+
+           app.addHandler('error', function (sender, data) {
+               data.isHandled = true;
+               if (!app.VM.errorVM) {
+                   alert(data.error.message);
+                   return;
+               }
+               app.VM.errorVM.error = data.error;
+               app.VM.errorVM.showDialog();
+            });
+
+            app.startUp(fn_Main);
+    });
+</script>
+
+<h2  style="display:inline-block;">@ViewBag.Title</h2>
+
+<!--using dataform is convenient because it set datacontext scope for all its content-->
+<div id="demoContent">
+<fieldset>
+    <legend>Radios DataBinding Examples</legend>
+    <div class="radioItem">
+        <input type="radio" name="radioItem" data-bind="{this.checked,to=radioValue,mode=TwoWay,converter=radioValueConverter,converterParam=radioValue1,source=VM.demoVM}" />
+        <span data-bind="{this.value,to=radioValues['radioValue1'].value,source=VM.demoVM}{this.toolTip,to=radioValues['radioValue1'].comment,source=VM.demoVM}"></span>
+    </div>
+    <div class="radioItem">
+        <input type="radio" name="radioItem" data-bind="{this.checked,to=radioValue,mode=TwoWay,converter=radioValueConverter,converterParam=radioValue2,source=VM.demoVM}" />
+        <span data-bind="{this.value,to=radioValues['radioValue2'].value,source=VM.demoVM}{this.toolTip,to=radioValues['radioValue2'].comment,source=VM.demoVM}"></span>
+    </div>
+        <div class="radioItem">
+        <input type="radio" name="radioItem" data-bind="{this.checked,to=radioValue,mode=TwoWay,converter=radioValueConverter,converterParam=radioValue3,source=VM.demoVM}" />
+        <span data-bind="{this.value,to=radioValues['radioValue3'].value,source=VM.demoVM}{this.toolTip,to=radioValues['radioValue3'].comment,source=VM.demoVM}"></span>
+    </div>
+    <div class="radioItem">
+        <input type="radio" name="radioItem" data-bind="{this.checked,to=radioValue,mode=TwoWay,converter=radioValueConverter,converterParam=radioValue4,source=VM.demoVM}" />
+        <span data-bind="{this.value,to=radioValues['radioValue4'].value,source=VM.demoVM}{this.toolTip,to=radioValues['radioValue4'].comment,source=VM.demoVM}"></span>
+    </div>
+</fieldset>
+    <h3>Demo of vertical and horizontal StackPanel &nbsp;(count:&nbsp;<span data-bind="{this.value,to=historyList.count,source=VM.demoVM}"></span>)</h3>
+    <!--example of using stackpanel for vertical and horizontal list view-->
+    <div style="border: 1px solid gray;float:left;width:180px; min-height:48px; max-height:250px; overflow:auto;" data-bind="{this.dataSource,to=historyList,source=VM.demoVM}" data-view="name=stackpanel,options:{templateID:stackPanelItemTemplate,orientation:vertical}"></div>
+    <div style="border: 1px solid gray;float:left;min-height:48px; min-width:170px; max-width:650px; overflow:auto; margin-left:15px;" data-bind="{this.dataSource,to=historyList,source=VM.demoVM}" data-view="name=stackpanel,options:{templateID:stackPanelItemTemplate,orientation:horizontal}"></div>
+    <br style="clear:both" />
+    <button class="btn btn-info btn-small" style="margin:5px 5px 5px 0px;" data-bind="{this.command,to=clearListCommand,mode=OneWay,source=VM.demoVM}">Clear list</button>
+</div>
+
+@section RiaTemplates
+{
+    <div id="stackPanelItemTemplate" class="stackPanelItem" style="width: 170px; padding: 4px;">
+        <strong><span style="color: Blue;" data-bind="{this.value,to=radioValue}"></span>
+        </strong>
+        <br />
+        Time:&nbsp;<span data-bind="{this.value,to=time,converter=dateTimeConverter,converterParam='HH:mm:ss'}"></span>
+    </div>
+}

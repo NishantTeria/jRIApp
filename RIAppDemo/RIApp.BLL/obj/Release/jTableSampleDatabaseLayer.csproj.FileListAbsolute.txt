@@ -1,0 +1,7 @@
+E:\Halil\Makalelerim\CodeProject.com\jTable\Development\CrudPlugInDevelop\jTableSampleDatabaseLayer\obj\Release\ResolveAssemblyReference.cache
+E:\Halil\Makalelerim\CodeProject.com\jTable\Development\CrudPlugInDevelop\jTableSampleDatabaseLayer\bin\Release\jTableSampleDatabaseLayer.dll
+E:\Halil\Makalelerim\CodeProject.com\jTable\Development\CrudPlugInDevelop\jTableSampleDatabaseLayer\bin\Release\jTableSampleDatabaseLayer.pdb
+E:\Halil\Makalelerim\CodeProject.com\jTable\Development\CrudPlugInDevelop\jTableSampleDatabaseLayer\bin\Release\EntityFramework.dll
+E:\Halil\Makalelerim\CodeProject.com\jTable\Development\CrudPlugInDevelop\jTableSampleDatabaseLayer\bin\Release\EntityFramework.xml
+E:\Halil\Makalelerim\CodeProject.com\jTable\Development\CrudPlugInDevelop\jTableSampleDatabaseLayer\obj\Release\jTableSampleDatabaseLayer.dll
+E:\Halil\Makalelerim\CodeProject.com\jTable\Development\CrudPlugInDevelop\jTableSampleDatabaseLayer\obj\Release\jTableSampleDatabaseLayer.pdb

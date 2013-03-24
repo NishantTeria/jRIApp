@@ -1,0 +1,17 @@
+C:\VISSTUDIO\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.dll
+C:\VISSTUDIO\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.pdb
+C:\VISSTUDIO\RIAppDemo\RIApp.DAL\obj\Debug\ResolveAssemblyReference.cache
+C:\VISSTUDIO\RIAppDemo\RIApp.DAL\obj\Debug\RIAppDemo.DAL.dll
+C:\VISSTUDIO\RIAppDemo\RIApp.DAL\obj\Debug\RIAppDemo.DAL.pdb
+C:\VISSTUDIO\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.dll.config
+D:\TEMP\TEST\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.dll.config
+D:\TEMP\TEST\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.dll
+D:\TEMP\TEST\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.pdb
+D:\TEMP\TEST\RIAppDemo\RIApp.DAL\obj\Debug\ResolveAssemblyReference.cache
+D:\TEMP\TEST\RIAppDemo\RIApp.DAL\obj\Debug\RIAppDemo.DAL.dll
+D:\TEMP\TEST\RIAppDemo\RIApp.DAL\obj\Debug\RIAppDemo.DAL.pdb
+C:\DATA\PROJECTS\LATEST\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.dll.config
+C:\DATA\PROJECTS\LATEST\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.dll
+C:\DATA\PROJECTS\LATEST\RIAppDemo\RIApp.DAL\bin\Debug\RIAppDemo.DAL.pdb
+C:\DATA\PROJECTS\LATEST\RIAppDemo\RIApp.DAL\obj\Debug\RIAppDemo.DAL.dll
+C:\DATA\PROJECTS\LATEST\RIAppDemo\RIApp.DAL\obj\Debug\RIAppDemo.DAL.pdb
