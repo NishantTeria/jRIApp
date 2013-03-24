@@ -1,7 +1,0 @@
-D:\TEMP\TEST\RIAppDemo\MTSAP.DataService.EF\bin\Debug\MTSAP.DataService.EF.dll
-D:\TEMP\TEST\RIAppDemo\MTSAP.DataService.EF\bin\Debug\MTSAP.DataService.EF.pdb
-D:\TEMP\TEST\RIAppDemo\MTSAP.DataService.EF\bin\Debug\MTSAP.DataService.dll
-D:\TEMP\TEST\RIAppDemo\MTSAP.DataService.EF\bin\Debug\MTSAP.DataService.pdb
-D:\TEMP\TEST\RIAppDemo\MTSAP.DataService.EF\obj\Debug\ResolveAssemblyReference.cache
-D:\TEMP\TEST\RIAppDemo\MTSAP.DataService.EF\obj\Debug\MTSAP.DataService.EF.dll
-D:\TEMP\TEST\RIAppDemo\MTSAP.DataService.EF\obj\Debug\MTSAP.DataService.EF.pdb
