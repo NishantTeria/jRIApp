@@ -47,4 +47,5 @@ You are welcome to use it in your applications.
 
 --
 Maxim V. Tsapov<br/>
-Moscow, Russian Federation 
+Moscow, Russian Federation<br/> 
+<a href="https://plus.google.com/u/0/102838307743207067758/about?tab=wX" target="_blank">I'm on Google+</a>
