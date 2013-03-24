@@ -37,7 +37,7 @@ The framework includes the ability to track changes (auditing) and do the error 
 <b>
 This framework is sufficiently tested (more than a year) on real world LOB applications. I developed it for myself and decided to share it with the
 community. I don't know any other frameworks on the market  with the capabilities of this framework. The three which
-i'm aware of are the KnockOut.js, the Breeze.je, and  the Upshot.js. But they all don't fullfill the purpose of developing the LOB
+i'm aware of are the KnockOut.js, the Breeze.js, and  the Upshot.js. But they all don't fullfill the purpose of developing the LOB
 applications. The only one which can be used for this purpose and works in browsers is Microsoft Silverlight with WCF RIA services,
 but it is not based on javascript and needs plugin.
 </b>
