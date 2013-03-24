@@ -92,7 +92,7 @@ table.ria-data-table tr:nth-child(even) {
             //and uncomment the above with loading of lookups by ajax calls
             app.VM.productVM.filter.modelData = @Html.Action("ProductModelData", "RIAppDemoService");
             app.VM.productVM.filter.categoryData = @Html.Action("ProductCategoryData", "RIAppDemoService");
-            app.VM.productVM.load().pipe(function(loadRes){alert(loadRes.outOfBandData.test);},function(){alert('load failed');});
+            app.VM.productVM.load().pipe(function(loadRes){/*alert(loadRes.outOfBandData.test);*/ return;},function(){alert('load failed');});
 
         }; //end fn_Main
 

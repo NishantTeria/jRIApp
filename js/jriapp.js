@@ -5762,7 +5762,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 return data;
             },
             _invokeMethod:function (methodInfo, data, callback) {
-                var operType = consts.DATA_OPER.INVOKE, postData, invokeUrl, methodName = methodInfo.methodName;
+                var self= this, operType = consts.DATA_OPER.INVOKE, postData, invokeUrl;
                 this.isBusy = true;
                 var fn_onComplete  = function(res){
                     try {
@@ -5774,7 +5774,7 @@ RIAPP.Application._coreModules.db = function (app) {
                         if (global._checkIsDummy(ex)) {
                             return;
                         }
-                        this._onDataOperError(ex, operType);
+                        self._onDataOperError(ex, operType);
                         callback({result:null, error:ex});
                     }
                 };
@@ -5788,12 +5788,12 @@ RIAPP.Application._coreModules.db = function (app) {
                         true,
                         function (res) { //success
                             fn_onComplete(res);
-                            this.isBusy = false;
+                            self.isBusy = false;
                         },
                         function (er) { //error
                             fn_onComplete({result:null, error:er});
-                            this.isBusy = false;
-                        }, this);
+                            self.isBusy = false;
+                        }, null);
                 }
                 catch (ex) {
                     if (global._checkIsDummy(ex)) {
