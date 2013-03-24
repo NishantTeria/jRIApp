@@ -8,7 +8,7 @@ You can watch video of the demo on <a href="http://youtu.be/ju9o1AwJgqs" target=
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
 It consists of two parts – the client and the server parts. 
 The client part was written in javascript language. 
-The server part was written in C#  and demo application was implemented in ASP.NET MVC (but it can be also written in other languages, for example Ruby or Java). 
+The server part was written in C#  and the demo application was implemented in ASP.NET MVC 4.
 The Server part resembles Microsoft WCF RIA services, featuring data services which is consumed by the clients. 
 The Client part resembles  Microsoft silverlight client development, only it is based on HTML (not XAML), and uses javascript for coding.
 The framework was designed primarily for building data centric Line of business (LOB) applications which will work natively in browsers without the need for plugins .
