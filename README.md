@@ -4,6 +4,9 @@ jRIApp
 <b>RIA application framework for building LOB applications</b>
 <br/>
 You can watch video of the demo on <a href="http://youtu.be/ju9o1AwJgqs" target="_blank">YouTube</a>
+<br/>
+You can discuss the framework on <a href="https://groups.google.com/forum/#!forum/jriapp-framework" target="_blank">Google Groups</a>
+
 
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
 It consists of two parts – the client and the server parts. 
