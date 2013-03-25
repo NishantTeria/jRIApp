@@ -6580,20 +6580,22 @@ RIAPP.Application._coreModules.db = function (app) {
                 if (!!this._fn_sort) {
                     items = items.sort(this._fn_sort);
                 }
-                this._fillItems({items:items, isPageChanged:!!isPageChanged}, true);
+                this._fillItems({items:items, isPageChanged:!!isPageChanged, clear: true, isAppend: false});
                 this._onViewRefreshed({});
             },
-            _fillItems:function (data, clearAll) {
+            _fillItems:function (data) {
                 data = utils.extend(false, {
                     items:[],
-                    isPageChanged:false
+                    isPageChanged:false,
+                    clear: true,
+                    isAppend: false
                 }, data);
                 var items, newItems = [], positions = [], fetchedItems = [];
                 this._onFillStart({ isBegin:true, rowCount:data.items.length, time:new Date(), isPageChanged:data.isPageChanged });
                 try {
-                    if (!!clearAll)
+                    if (!!data.clear)
                         this.clear();
-                    if (this.isPagingEnabled) {
+                    if (this.isPagingEnabled && !data.isAppend) {
                         items = this._filterForPaging(data.items);
                     }
                     else
@@ -6618,10 +6620,10 @@ RIAPP.Application._coreModules.db = function (app) {
                         this.raisePropertyChanged('count');
                     }
                 } finally {
-                    this._onFillEnd({ isBegin:false, rowCount:fetchedItems.length, time:new Date(), resetUI:!!clearAll,
+                    this._onFillEnd({ isBegin:false, rowCount:fetchedItems.length, time:new Date(), resetUI:!!data.clear,
                         fetchedItems:fetchedItems, newItems:newItems, isPageChanged:data.isPageChanged});
                 }
-                if (!!clearAll)
+                if (!!data.clear)
                     this.totalCount = data.items.length;
                 else
                     this.totalCount = this.totalCount + newItems.length;
@@ -6784,7 +6786,7 @@ RIAPP.Application._coreModules.db = function (app) {
             appendItems:function (items) {
                 if (this._isDestroyed)
                     return [];
-                return this._fillItems({items:items, isPageChanged:false}, false);
+                return this._fillItems({items:items, isPageChanged:false, clear: false, isAppend: true});
             },
             _getStrValue:function (val, fieldInfo) {
                 return this._dataSource._getStrValue(val, fieldInfo);
@@ -6886,6 +6888,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 this._itemsByKey = {};
                 this._errors = {};
                 this._onItemsChanged({ change_type:consts.COLL_CHANGE_TYPE.RESET, items:[] });
+                this.pageIndex = 0;
                 this.raisePropertyChanged('count');
             },
             refresh:function () {
@@ -7668,7 +7671,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     if (!!self._fn_sort) {
                         items = items.sort(self._fn_sort);
                     }
-                    self._fillItems({items:items, isPageChanged:false}, true);
+                    self._fillItems({items:items, isPageChanged:false, clear: true, isAppend: false});
                     self._onViewRefreshed({});
                 }, 250);
             },
