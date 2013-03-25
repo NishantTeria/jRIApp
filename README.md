@@ -3,7 +3,7 @@ jRIApp
 
 <b>RIA application framework for building LOB applications</b>
 <br/>
-You can watch video of the demo on <a href="http://youtu.be/ju9o1AwJgqs" target="_blank">YouTube</a>
+You can watch video of the demo on <a href="http://youtu.be/CxWcC2O8u-k" target="_blank">YouTube</a>
 <br/>
 You can discuss the framework on <a href="https://groups.google.com/forum/#!forum/jriapp-framework" target="_blank">Google Groups</a>
 
