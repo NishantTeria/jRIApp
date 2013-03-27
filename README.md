@@ -16,8 +16,8 @@ The Server part resembles Microsoft WCF RIA services, featuring data services wh
 The Client part resembles  Microsoft silverlight client development, only it is based on HTML (not XAML), and uses javascript for coding.
 The framework was designed primarily for building data centric Line of business (LOB) applications which will work natively in browsers without the need for plugins .
 The framework supports wide range of essential features for creating LOB applications, such as, declarative use of data bindings,
- integration with the server side service, data templates, client and server side data validation,
- localization, authorization, and a set of GUI controls, like the datagrid, the stackpanel and a lot of  utility code.
+integration with the server side service, data templates, client and server side data validation,
+localization, authorization, and a set of GUI controls, like the datagrid, the stackpanel and a lot of  utility code.
 Unlike many other existing frameworks, which use MVC design pattern, the framework uses Model View View Model (MVVM) 
 design pattern for creating applications. 
 The use of data bindings and view models resembles Microsoft silverlight data bindings style used in the XAML.
@@ -31,19 +31,21 @@ Because the framework is primarily designed for developing LOB’s applications, t
 The framework is distinguished from other frameworks available on the market by its 
 full implementation of the features required for building real world  LOB applications.
 It has implemeted server side component - the data service. It has GUI controls that are aware of the events raised by data centric objects
- like the DbSet and the Entity. 
+like the DbSet and the Entity. 
 
 For the creation of data centric applications the framework has GUI controls for working with the server originated data, with editing support, 
 and submitting changes to the server with the data passing through data validation and authorization stages of data processing,
- returning autogenerating field values - such as primary keys, timestamp values. 
+returning autogenerating field values - such as primary keys, timestamp values. 
 The framework includes the ability to track changes (auditing) and do the error logging.
 
 <b>
-This framework is sufficiently tested (more than a year) on real world LOB applications. I developed it for myself and decided to share it with the
-community. I don't know any other frameworks on the market  with the capabilities of this framework. The three which
-i'm aware of are the KnockOut.js, the Breeze.js, and  the Upshot.js. But they all don't fullfill the purpose of developing the LOB
-applications. The only one which can be used for this purpose and works in browsers is Microsoft Silverlight with WCF RIA services,
-but it is not based on javascript and needs plugin.
+This framework is sufficiently tested (<i>i started it 2012-01-05</i>) on real world LOB applications. 
+I developed it for myself and use it for LOB applications development at my work (an insurance company), and it replaces Silverlight with WCF RIA services 100%.
+I decided to share it with the community because i often use free frameworks and plugins, and i'm not greedy:). 
+I don't know any other javascript framework on the market with the capabilities of this framework for building the LOB applications (and there are many of them). 
+I could not find a framework for the purpose with so many requirements as for building the real world LOB applications, 
+so i chose to create it myself. 
+And one more thing, i liked silverlight, with its superb databinding capabilities, so i mimicked them as much as i could in the framework.
 </b>
 
 You are welcome to use it in your applications.
