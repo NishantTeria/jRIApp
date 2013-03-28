@@ -283,7 +283,8 @@ RIAPP.Application.registerModule('gridDemo', function (app) {
 
                 // example of getting notifications in viewmodel on tabs events
                 this._tabsEventCommand = app.getType('Command').create(function (sender, param) {
-                    //alert(param.eventName);
+                    var index = param.args.index, tab = param.args.tab, panel = param.args.panel;
+                    //alert('event: '+ param.eventName + ' was triggered on tab: '+index);
                 }, self, null);
 
                 //adds new product - uses dialog to enter the data
@@ -309,6 +310,8 @@ RIAPP.Application.registerModule('gridDemo', function (app) {
                 //look at the datagrid's databinding on the demo page
                 this._propChangeCommand =  app.getType('Command').create(function (sender, data) {
                     if (data.property=='*' || data.property=='grid'){
+                        if (self._dataGrid === sender.grid)
+                            return;
                         self._dataGrid = sender.grid;
                     }
                     //example of binding to dataGrid events
