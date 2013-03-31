@@ -125,11 +125,11 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 }
             },
             _onKeyPress: function(keyCode){
-                if (keyCode === consts.Key.esc){
+                if (keyCode === consts.KEYS.esc){
                     this._hide();
                     return;
                 }
-                if (keyCode === consts.Key.enter){
+                if (keyCode === consts.KEYS.enter){
                     this._updateSelection();
                     this._hide();
                     return;

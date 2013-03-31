@@ -1,7 +1,7 @@
 RIAPP.Application.registerModule('common', function (app) {
     var global = app.global, utils = global.utils, consts = global.consts, TEXT = RIAPP.localizable.TEXT;
 
-    var NotConverter = app.getType('BaseConverter').extend({
+    var NotConverter = app.getConverter('BaseConverter').extend({
         convertToSource:function (val, param, dataContext) {
             return !val;
         },
@@ -9,7 +9,7 @@ RIAPP.Application.registerModule('common', function (app) {
             return !val;
         }
     }, null, function (obj) {
-        global.registerConverter('notConverter', obj);
+        app.registerConverter('notConverter', obj);
     });
 
     var DialogVM = app.getType('BaseViewModel').extend(

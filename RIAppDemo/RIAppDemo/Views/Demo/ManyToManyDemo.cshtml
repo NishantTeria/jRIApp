@@ -121,6 +121,7 @@ div.ria-dataform .address { width: 60%; }
             });
 
             app.addHandler('error', function (sender, data) {
+                debugger;
                 data.isHandled = true;
                 if (!app.VM.errorVM)
                 {

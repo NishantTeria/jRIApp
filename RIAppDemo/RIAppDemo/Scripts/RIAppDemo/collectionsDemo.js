@@ -10,7 +10,7 @@ RIAPP.Application.registerModule('collectionsDemoModule', function (app) {
             return (val == param)?true:false;
         }
     }, null, function (obj) {
-        global.registerConverter('radioValueConverter', obj);
+        app.registerConverter('radioValueConverter', obj);
     });
 
     var RadioDemoVM = app.getType('BaseViewModel').extend({

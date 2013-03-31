@@ -2,7 +2,7 @@ RIAPP.Application.registerModule('bindingsDemoMod', function (app) {
     var global = app.global, utils = global.utils, consts = global.consts;
     var TEXT = RIAPP.localizable.TEXT;
 
-    var UppercaseConverter = app.getType('BaseConverter').extend({
+    var UppercaseConverter = app.getConverter('BaseConverter').extend({
         convertToSource:function (val, param, dataContext) {
             if (utils.check_is.String(val))
                 return val.toLowerCase();
@@ -16,7 +16,7 @@ RIAPP.Application.registerModule('bindingsDemoMod', function (app) {
                 return val;
         }
     }, null, function (obj) {
-        global.registerConverter('uppercaseConverter', obj);
+        app.registerConverter('uppercaseConverter', obj);
     });
 
     /*
@@ -28,14 +28,14 @@ RIAPP.Application.registerModule('bindingsDemoMod', function (app) {
             _create: function (initPropValue) {
                 this._super();
                 var self = this;
-                this._testProperty = initPropValue;
+                this._testProperty1 = initPropValue;
                 this._testProperty2 = null;
                 this._testCommand = app.getType('Command').create(function (sender, args) {
                     self._onTestCommandExecuted();
                 }, self,
                  function (sender, args) {
                     //if this function return false, then command is disabled
-                    return utils.check_is.String(self.testProperty) && self.testProperty.length > 3;
+                    return utils.check_is.String(self.testProperty1) && self.testProperty1.length > 3;
                 });
 
                 this._month = new Date().getMonth()+1;
@@ -50,18 +50,18 @@ RIAPP.Application.registerModule('bindingsDemoMod', function (app) {
                 this._formats.fillItems([{key:'PDF',val:'Acrobat Reader PDF'},{key:'WORD',val:'MS Word DOC'},{key:'EXCEL',val:'MS Excel XLS'}], true);
             },
             _onTestCommandExecuted: function(){
-                alert(String.format("testProperty:{0}, format:{1}, month: {2}",this.testProperty,this.format,this.month));
+                alert(String.format("testProperty1:{0}, format:{1}, month: {2}",this.testProperty1,this.format,this.month));
             }
         },
         {
-            testProperty: {
+            testProperty1: {
                 get: function () {
-                    return this._testProperty;
+                    return this._testProperty1;
                 },
                 set: function (v) {
-                    if (this._testProperty != v){
-                        this._testProperty = v;
-                        this.raisePropertyChanged('testProperty');
+                    if (this._testProperty1 != v){
+                        this._testProperty1 = v;
+                        this.raisePropertyChanged('testProperty1');
                         //let command evaluate again its avalability
                         this._testCommand.raiseCanExecuteChanged();
                     }

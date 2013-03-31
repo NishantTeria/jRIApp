@@ -426,18 +426,19 @@ RIAPP.Application.registerModule('manyToManyDemo', function (app) {
                         self.searchString = null;
                     },
                     fn_OnOK: function(dialog){
+                        var DIALOG_ACTION = app.modules.datadialog.consts.DIALOG_ACTION;
                         if (!self._isAddingNew){
-                            return consts.DIALOG_ACTION.Default; //allow close dialog
+                            return DIALOG_ACTION.Default; //allow close dialog
                         }
                         if (!self._newAddress.endEdit())
-                            return consts.DIALOG_ACTION.StayOpen;
+                            return DIALOG_ACTION.StayOpen;
                         var custAdress = self._customerAddressVM._addNewCustAddress(self._newAddress);
                         custAdress.endEdit();
                         self._newAddress = null;
                         self._isAddingNew = false;
                         self.raisePropertyChanged('newAddress');
                         self.raisePropertyChanged('isAddingNew');
-                        return consts.DIALOG_ACTION.StayOpen;
+                        return DIALOG_ACTION.StayOpen;
                     },
                     fn_OnCancel: function(dialog){
                         if (!self._isAddingNew){

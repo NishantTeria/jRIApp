@@ -1,0 +1,34 @@
+VERSION CHANGES
+
+VERSION 1.1:
+
+Framework's modules were restructured and tidyed up.
+Now the modules are really modules, they register types in their 'THIS' variables on the time of their
+execution by the framework.
+You can get module's types using app.modules.moduleName.typeName.
+
+P.S. - app.registerType and app.getType methods are still working, but they used rarer in the internals,
+and many types which are not used directly by the user code are not registered by registerType method.
+Getting types by modules are preferable now.
+
+Constants definition are now moved to their related modules, only global costants which are used in many
+modules are preserved global.
+
+Two methods for registering and obtaining the converters are now application's methods (not global's).
+You can use app.getConverter and app.registerConverter.
+
+The type BindingContentFactory which creates content types is now can be easily replaced to provide 
+user's extended version which can create more content types than the default version. Application exposes
+property bindingContentFactory, where you can set your extended version.
+
+global.consts.Key enumeration was renamed to global.consts.KEYS
+ 
+
+PLANNED FOR VERSION 1.2:
+
+I want to add the support in the framework to load page's templates from the server.
+Now framework support templates but they are mainly used to provide small parts of UI in the whole page structure
+and their definitions are embedded in the page. 
+Pages' templates will replace whole page views, they can be switched, so the view is dynamically changed.
+The url of the page and the background data (DbContexts' instances) will remain alive when the page view is switched.
+So the data will be in sync between different views, because only views are changing, not their data.

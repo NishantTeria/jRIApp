@@ -56,9 +56,9 @@
             app.VM.testObject1 = app.getType('custom.TestObject').create('Test Initial Value');
 
             //usage example: creating binding in code
-            app.getType('Binding').create({ sourcePath: 'testProperty', targetPath: 'testProperty2',
+            app.getType('Binding').create({ sourcePath: 'testProperty1', targetPath: 'testProperty2',
                 source: app.VM.testObject1, mode: 'OneWay',
-                target: app.VM.testObject1, converter: RIAPP.global.getConverter('uppercaseConverter'), converterParam: null
+                target: app.VM.testObject1, converter: app.getConverter('uppercaseConverter'), converterParam: null
             });
         }; //end fn_Main
 
@@ -69,7 +69,8 @@
             moduleNames: ['common', 'bindingsDemoMod']
         });
 
-           app.addHandler('error', function (sender, data) {
+        app.addHandler('error', function (sender, data) {
+            debugger;
                data.isHandled = true;
                if (!app.VM.errorVM) {
                    alert(data.error.message);
@@ -90,9 +91,9 @@
 <fieldset>
     <legend>HTML elements bounded to TestObject properties</legend>
      <div style="margin:5px 5px 5px 0px;">
-        <label>testProperty: </label>
+        <label>testProperty1: </label>
         <!--without updateOnKeyUp option, value is updated only when textbox looses focus-->
-        <input type="text" data-bind="{this.value,to=testProperty,mode=TwoWay,source=VM.testObject1}" data-view="options:{updateOnKeyUp=true}" style="width:250px"/>
+        <input type="text" data-bind="{this.value,to=testProperty1,mode=TwoWay,source=VM.testObject1}" data-view="options:{updateOnKeyUp=true}" style="width:250px"/>
         &nbsp;<span data-bind="{this.value,to=testProperty2,mode=OneWay,source=VM.testObject1}" ></span>
      </div>
      <div style="margin:5px 5px 5px 0px;"><label for="months">Months: </label><select size="1" style="width:150px" data-bind="{this.dataSource,to=months,mode=OneWay,source=VM.testObject1}{this.selectedValue,to=month,mode=TwoWay,source=VM.testObject1}" data-view="options:{valuePath=key,textPath=val}"></select></div>

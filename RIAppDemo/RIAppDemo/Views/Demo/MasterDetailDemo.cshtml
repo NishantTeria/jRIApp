@@ -82,7 +82,7 @@ table.ria-data-table tr:nth-child(even) {
             });
 
             app.addHandler('error', function (sender, data) {
-               //debugger;
+               debugger;
                 data.isHandled = true;
                 if (!app.VM.errorVM)
                 {
@@ -638,6 +638,7 @@ table.ria-data-table tr:nth-child(even) {
         <span data-bind="{this.value,to=Product.Name}"></span>
     </div>
     <div id="productTemplate2">
+        autocomplete here-->
         <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.dataContext}"
             data-view="name=productACV,options={fieldName:Name,dbSetName:LookUpProduct,queryName:ReadProductLookUp,templateId:autocompleteTemplate}" />&nbsp;<b>*</b>
     </div>
