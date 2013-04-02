@@ -237,7 +237,7 @@ div.ria-dataform .address { width: 60%; }
 
 @section RiaTemplates
 {
-    <div id="customerEditTemplate">
+    <div id="customerEditTemplate" data-role="template">
         <form action="#" style="width: 100%" data-bind="{this.dataContext}" data-view="name=dataform">
         <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
             <colgroup>
@@ -339,16 +339,16 @@ div.ria-dataform .address { width: 60%; }
         </table>
         </form>
     </div>
-    <div id="salespersonTemplate1">
+    <div id="salespersonTemplate1" data-role="template">
         <span data-bind="{this.value,to=SalesPerson}"></span>
     </div>
-    <div id="salespersonTemplate2">
+    <div id="salespersonTemplate2" data-role="template">
         <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.value,to=SalesPerson,mode=TwoWay}{this.dataContext}"
             data-view="name=autocomplete,options={fieldName:SalesPerson,dbSetName:SalesInfo,queryName:ReadSalesInfo,templateId:autocompleteTemplate}" />
         &nbsp;<span style="color: Gray;">&lt;--autocomplete here</span>
     </div>
     @*example of autocomplete implementation*@
-    <div id="autocompleteTemplate" style="position: absolute; z-index: 10000; visibility: hidden;
+    <div id="autocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden;
         background-color: White; border: 1px solid gray;">
         <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px;
             width: 200px; vertical-align: top;" data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">
@@ -379,7 +379,7 @@ div.ria-dataform .address { width: 60%; }
         </div>
     </div>
     @*used for display of customer's address on the right panel*@
-    <div id="addressTemplate" class="addressTemplate">
+    <div id="addressTemplate" data-role="template"  class="addressTemplate">
         <fieldset>
             <legend style="margin-bottom: 4px; font-size: 14px; font-weight: bold;"><span class="address"
                 data-bind="{this.value,to=AddressType}"></span></legend>
@@ -419,7 +419,7 @@ div.ria-dataform .address { width: 60%; }
     </div>
     <!--addressTemplate-->
     @*used for managing of customer's addresses in many to many relationship*@
-    <div id="addAddressTemplate">
+    <div id="addAddressTemplate" data-role="template">
         <div style="margin-bottom: 4px;">
             <span>Customer:</span>&nbsp;<span style="font-weight: bold; color: Blue;" data-bind="{this.value,to=customer.Name}"></span>
         </div>
@@ -534,7 +534,7 @@ div.ria-dataform .address { width: 60%; }
             </form>
         </div>
     </div>
-    <div id="stackPanelItemTemplate" class="stackPanelItem" style="width: 200px;">
+    <div id="stackPanelItemTemplate" data-role="template" class="stackPanelItem" style="width: 200px;">
         <fieldset>
             <legend><span class="address" data-bind="{this.value,to=AddressType}"></span></legend>
             <span data-bind="{this.value,to=AddressLine}"></span>&nbsp;<a data-bind="{this.command,to=helpCommand,source=VM.customerVM},{this.commandParam}" data-view="options={tip='click me for help!',linkimg='@Url.Content("~/Scripts/jriapp/img/help.gif")'}">help</a>

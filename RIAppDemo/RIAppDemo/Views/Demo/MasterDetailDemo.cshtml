@@ -151,7 +151,7 @@ table.ria-data-table tr:nth-child(even) {
  
 @section RiaTemplates
 {
-    <div id="customerEditTemplate">
+    <div id="customerEditTemplate" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
                 <colgroup>
@@ -254,7 +254,7 @@ table.ria-data-table tr:nth-child(even) {
         </div>
     </div>
     @*Grid details template for customer's orders*@
-    <div id="customerDetailsTemplate">
+    <div id="customerDetailsTemplate" data-role="template">
         <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM"
             data-view="name='tabs'">
             <div id="detailsTabs">
@@ -336,7 +336,7 @@ table.ria-data-table tr:nth-child(even) {
             </div>
         </div>
     </div>
-    <div id="orderEditTemplate">
+    <div id="orderEditTemplate" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
                 <colgroup>
@@ -479,7 +479,7 @@ table.ria-data-table tr:nth-child(even) {
             </table>
         </div>
     </div>
-    <div id="orderDetEditTemplate">
+    <div id="orderDetEditTemplate" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
                 <colgroup>
@@ -541,7 +541,7 @@ table.ria-data-table tr:nth-child(even) {
         </div>
     </div>
     @*Grid details template for order Details*@
-    <div id="orderDetailsTemplate">
+    <div id="orderDetailsTemplate" data-role="template">
         <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM.ordersVM"  data-view="name='tabs'">
                <div id="odeTabs">
                 <ul>
@@ -634,16 +634,16 @@ table.ria-data-table tr:nth-child(even) {
             </div>
         </div>
     </div>
-    <div id="productTemplate1">
+    <div id="productTemplate1" data-role="template">
         <span data-bind="{this.value,to=Product.Name}"></span>
     </div>
-    <div id="productTemplate2">
+    <div id="productTemplate2" data-role="template">
         autocomplete here-->
         <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.dataContext}"
             data-view="name=productACV,options={fieldName:Name,dbSetName:LookUpProduct,queryName:ReadProductLookUp,templateId:autocompleteTemplate}" />&nbsp;<b>*</b>
     </div>
     @*example of autocomplete implementation*@
-    <div id="autocompleteTemplate" style="position: absolute; z-index: 10000; visibility: hidden;
+    <div id="autocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden;
     background-color: White; border: 1px solid gray;">
     <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px;
         vertical-align: top;" data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">

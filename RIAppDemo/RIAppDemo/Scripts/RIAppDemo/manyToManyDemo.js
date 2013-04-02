@@ -442,12 +442,12 @@ RIAPP.Application.registerModule('manyToManyDemo', function (app) {
                     },
                     fn_OnCancel: function(dialog){
                         if (!self._isAddingNew){
-                            return consts.DIALOG_ACTION.Default;
+                            return dialog.DIALOG_ACTION.Default;
                         }
                         if (!!self._newAddress){
                             self._cancelAddNewAddress();
                         }
-                        return consts.DIALOG_ACTION.StayOpen;
+                        return dialog.DIALOG_ACTION.StayOpen;
                     }
                 };
                 this._dialogVM.createDialog('addressDialog', dialogOptions);
