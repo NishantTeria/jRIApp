@@ -25,11 +25,17 @@ global.consts.Key enumeration was renamed to global.consts.KEYS
  
 
 VERSION 1.2:
-All changes nonbreaking.
+breaking changes:
+templates need attribute data-role="template"
+the templates which are loaded individually don't need it, but it does not hurt to add it.
+It is needed because templates now all need internal preprocessing, and they need to be distinguished not only by their ids.
 
-docs will be updated shortly. At present GridDemo has a lot of comments to track new features.
+nonbreaking changes:
  
 1) Added dynamic loading of templates from server 
 2) Added new element view "dynacontent" which can display templated content with switching of template and dataContext
 3) Added new event 'load' to the Global object which is equivalent to jQuery.ready event - only more framework friendly.   
 4) And restructured some code
+
+
+docs will be updated shortly. At present GridDemo has a lot of comments to track new features.
