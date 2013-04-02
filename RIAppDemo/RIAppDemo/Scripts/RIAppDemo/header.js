@@ -1,7 +1,7 @@
 RIAPP.Application.registerModule('header', function (app) {
-    var global = app.global, utils = global.utils;
+    var thisModule = this, global = app.global, utils = global.utils;
 
-    var HeaderVM = app.getType('BaseViewModel').extend({
+    var HeaderVM = thisModule.HeaderVM = app.getType('BaseViewModel').extend({
             _create:function () {
                 this._super();
                 var self = this;

@@ -42,7 +42,7 @@
     <section class="ria-template">
         @RenderSection("RiaTemplates", false)
         @*error dialog template*@
-        <div id="errorTemplate">
+        <div id="errorTemplate" data-role="template">
             <div style="width: 100%; height: 100%; background-color: White; color: Red;">
                 <div style="display: inline-block" data-bind="{this.value,to=message}">
                 </div>

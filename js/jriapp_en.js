@@ -23,6 +23,7 @@ RIAPP.ERRS = {
     ERR_APP_NEED_JQUERY:'Application is dependent on jQuery!',
     ERR_TYPE_ALREDY_REGISTERED:'Type with the name: {0} is already registered',
     ERR_MODULE_ALREDY_REGISTERED:'Module with the name: {0} is already registered',
+    ERR_TEMPLATE_ALREDY_REGISTERED:'TEMPLATE with the name: {0} is already registered',
     ERR_CONVERTER_NOTREGISTERED:'Converter: {0} is not registered',
     ERR_JQUERY_DATEPICKER_NOTFOUND:'Application is dependent on JQuery.UI.datepicker',
     ERR_PARAM_INVALID:'Parameter: {0} has invalid value: {1}',

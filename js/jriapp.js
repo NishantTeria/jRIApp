@@ -407,9 +407,12 @@ RIAPP.BaseObject = {
 RIAPP._glob_modules = ['array_ext', 'consts', 'errors', 'defaults', 'utils', 'riapp'];
 RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template', 'mvvm', 'collection', 'db', 'listbox',
     'datadialog', 'baseContent', 'datagrid', 'pager', 'stackpanel', 'dataform', 'elview', 'content'];
+RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.1.0",
+        version:"1.2.0",
+        _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
+        _TEMPLATE_SELECTOR:'*[data-role="template"]',
         _coreModules:{}, //static
         _create:function (window, jQuery) {
             this._super();
@@ -426,6 +429,11 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             this._defaults = null;
             this._userCode = {};
             this._exports = {}; //exported types
+            this._utils = null;
+            this._consts = null;
+            this._templateLoaders = {};
+            this._promises = [];
+
             //initialize the required coreModules
             for (var i = 0; i < RIAPP._glob_modules.length; i += 1) {
                 curMod = {};
@@ -436,30 +444,36 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             }
             this._init();
             Object.freeze(this._coreModules);
+            this._waitQueue = this.utils.WaitQueue.create(this);
         },
         _init:function () {
             var self = this;
+            self.$(self.document).ready(function ($) {
+                self._processTemplateSections(self.document);
+                self.raiseEvent('load', { });
+            });
             //when clicked outside any Selectable set _currentSelectable = null
-            this.$(this.document).on("click.global", function (e) {
+            self.$(self.document).on("click.global", function (e) {
                 e.stopPropagation();
                 self.currentSelectable = null;
             });
-            this.$(this.document).on("keydown.global", function (e) {
+            self.$(self.document).on("keydown.global", function (e) {
                 e.stopPropagation();
                 if (!!self._currentSelectable) {
                     self._currentSelectable._onKeyDown(e.which, e);
                 }
             });
-            this.$(this.document).on("keyup.global", function (e) {
+            self.$(self.document).on("keyup.global", function (e) {
                 e.stopPropagation();
                 if (!!self._currentSelectable) {
                     self._currentSelectable._onKeyUp(e.which, e);
                 }
             });
-            this.$(this.window).unload(function () {
+            self.$(self.window).unload(function () {
                 self.raiseEvent('unload', { });
             });
-            this.window.onerror = function (msg, url, linenumber) {
+            //this way to attach for correct work in firefox
+            self.window.onerror = function (msg, url, linenumber) {
                 if (!!msg && msg.indexOf("DUMMY_ERROR") > -1) {
                     return true;
                 }
@@ -469,7 +483,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
         },
         _getEventNames:function () {
             var base_events = this._super();
-            return ['unload'].concat(base_events);
+            return ['load','unload'].concat(base_events);
         },
         _onGridAdded:function (grid) {
             var self = this, utils = self.utils, tableEl = grid.$container;
@@ -507,6 +521,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             if (!this._appInst[app.appName])
                 return;
             delete this._appInst[app.appName];
+            delete this._templateLoaders[app.appName];
         },
         _destroyApps:function () {
             var self = this;
@@ -555,6 +570,77 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             }
             return parent;
         },
+        _processTemplateSections:function(root){
+            var self = this;
+            var sections = Array.fromList(root.querySelectorAll(self._TEMPLATES_SELECTOR));
+            sections.forEach(function (el) {
+                self._processTemplateSection(el);
+                self.utils.removeNode(el);
+            });
+        },
+        _processTemplateSection:function(templateSection){
+            var self = this;
+            var templates = Array.fromList(templateSection.querySelectorAll(self._TEMPLATE_SELECTOR));
+            templates.forEach(function (el) {
+                var tmpDiv = self.document.createElement('div'), html, name = el.getAttribute('id'), deferred = self.utils.createDeferred();
+                el.removeAttribute('id');
+                tmpDiv.appendChild(el);
+                html = tmpDiv.innerHTML;
+                deferred.resolve(html);
+                var fn_loader = function(){
+                    return deferred.promise();
+                };
+                self._registerTemplateLoader(name,fn_loader);
+            });
+        },
+        /*
+         fn_loader must load template and return promise which resolves
+         with loaded HTML string
+         */
+        _registerTemplateLoader:function (name, fn_loader) {
+            var self = this;
+            if (!self.utils.check_is.Function(fn_loader)){
+                throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_ASSERTION_FAILED, 'fn_loader is Function'));
+            }
+            var parts = name.split('.'),
+                parent = self._templateLoaders,
+                i;
+            for (i = 0; i < parts.length - 1; i += 1) {
+                // create a property if it doesn't exist
+                if (!parent[parts[i]]) {
+                    parent[parts[i]] = {};
+                }
+                parent = parent[parts[i]];
+            }
+            var n = parts[parts.length - 1]; //the last part is the loader name itself
+            if (!!parent[n])
+               throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TEMPLATE_ALREDY_REGISTERED, name));
+            parent[n] = fn_loader;
+            return parent;
+        },
+        _getTemplateLoader:function(name) {
+            var parts = name.split('.'),
+                parent = this._templateLoaders,
+                i;
+            for (i = 0; i < parts.length; i += 1) {
+                if (!parent[parts[i]]) {
+                    return null;
+                }
+                parent = parent[parts[i]];
+            }
+            return parent;
+        },
+        _waitForNotLoading:function (callback, callbackArgs) {
+            this._waitQueue.enQueue({
+                prop:'_isLoading',
+                groupName:null,
+                predicate:function (val) {
+                    return !val;
+                },
+                action:callback,
+                actionArgs:callbackArgs
+            });
+        },
         reThrow:function (ex, isHandled) {
             if (!!isHandled)
                 this._throwDummy(ex);
@@ -565,15 +651,24 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             return this._appInst[name];
         },
         destroy:function () {
+            if (this._isDestroyed)
+                return;
+            this._isDestroying = true;
             var self = this;
+            if (!!self._waitQueue){
+                self._waitQueue.destroy()
+                self._waitQueue = null;
+            }
+            self._promises = [];
             self.removeHandler();
             self._destroyApps();
             self._modInst = {};
             self._exports = {};
-            this.$(this.document).off(".global");
+            self._templateLoaders = {};
+            self.$(self.document).off(".global");
             RIAPP.Application = null;
             RIAPP.global = null;
-            this.window.onerror = null;
+            self.window.onerror = null;
             self._super();
         },
         registerType:function (name, obj) {
@@ -586,11 +681,49 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             var images = this.defaults.imagesPath;
             return images + imageName;
         },
+        loadTemplates:function (url) {
+           var self = this, promise = this.$.get(url), old = self._isLoading;
+            self._promises.push(promise);
+            if (self._isLoading !== old)
+                self.raisePropertyChanged('_isLoading');
+            promise.done(function(html){
+                self.utils.removeFromArray(self._promises,promise);
+                try
+                {
+                    var tmpDiv = self.document.createElement('div');
+                    tmpDiv.innerHTML = html;
+                    self._processTemplateSection(tmpDiv);
+                }
+                catch(ex){
+                   self._onError(ex,self);
+                }
+                if (!self._isLoading)
+                    self.raisePropertyChanged('_isLoading');
+            });
+            promise.fail(function(err){
+                self.utils.removeFromArray(self._promises,promise);
+                if (!self._isLoading)
+                    self.raisePropertyChanged('_isLoading');
+                if (!!err && !!err.message){
+                    self._onError(err,self);
+                }
+                else if (!!err){
+                    self._onError(new Error(err.toString()),self);
+                }
+                else
+                    self._onError(new Error('Failed to load template section from: '+url),self);
+            });
+        },
         toString:function () {
             return 'Global';
         }
     },
     {
+        _isLoading:{
+            get:function () {
+                return this._promises.length >0;
+            }
+        },
         //jQuery
         $:{
             get:function () {
@@ -632,6 +765,28 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             },
             get:function () {
                 return this._defaults;
+            }
+        },
+        consts:{
+            set:function (v) {
+                if (!this._consts)
+                    this._consts = v;
+                else
+                    throw new Error('Global consts already initialized');
+            },
+            get:function () {
+                return this._consts;
+            }
+        },
+        utils:{
+            set:function (v) {
+                if (!this._utils)
+                    this._utils = v;
+                else
+                    throw new Error('Global utils already initialized');
+            },
+            get:function () {
+                return this._utils;
             }
         },
         //Namespace for custom user code
@@ -698,7 +853,7 @@ RIAPP.Global._coreModules.consts = function (global) {
         down:40,
         del:127
     };
-    consts.ELVIEW_NM = {DATAFORM:'dataform'};
+    consts.ELVIEW_NM = {DATAFORM:'dataform',DYNACONT:'dynacontent'};
     var names = Object.getOwnPropertyNames(consts);
     names.forEach(function (nm) {
         Object.freeze(consts[nm]);
@@ -972,23 +1127,25 @@ RIAPP.Global._coreModules.utils = function (global) {
             return parseFloat(number.toFixed(decimals));
         },
         performAjaxCall:function (url, postData, async, fn_success, fn_error, context) {
-            global.$.ajax({
+            var promise = global.$.ajax({
                 url:url,
                 type:'POST',
                 dataType:'json',
                 data:postData,
                 async:async,
-                context:context,
                 timeout:global.defaults.ajaxTimeOut * 1000,
-                contentType:'application/json; charset=utf-8',
-                success:function (data) {
-                    fn_success.call(this, data);
-                },
-                error:function (jqXHR, textStatus, errorThrown) {
-                    var er = '' + textStatus + ': ' + errorThrown;
-                    fn_error.call(this, er);
-                }
+                contentType:'application/json; charset=utf-8'
             });
+            if (!!fn_success)
+                promise.done(function(data){
+                    fn_success.call(context, data);
+                });
+            if (!!fn_error)
+                promise.fail(function(err){
+                    var er = '' + err;
+                    fn_error.call(context, er);
+                });
+            return promise;
         },
         check_is:{
             Null:function (a) {
@@ -1191,6 +1348,16 @@ RIAPP.Global._coreModules.utils = function (global) {
 
             return o1;
         },
+        removeFromArray:function(array,obj){
+            var i = array.indexOf(obj);
+            if (i > -1) {
+                array.splice(i, 1);
+            }
+            return i;
+        },
+        insertIntoArray:function(array,obj,pos){
+            array.splice(pos, 0, obj);
+        },
         /*
          * Generate a random uuid.
          *
@@ -1328,10 +1495,7 @@ RIAPP.Global._coreModules.utils = function (global) {
                 this._objs.push(b);
         },
         removeObj:function (b) {
-            var i = this._objs.indexOf(b);
-            if (i < 0)
-                return;
-            this._objs.splice(i, 1);
+            utils.removeFromArray(this._objs,b);
         },
         getObjs:function () {
             return this._objs;
@@ -1557,18 +1721,19 @@ RIAPP.Global._coreModules.utils = function (global) {
 
 RIAPP.Global._coreModules.riapp = function (global) {
     var thisModule = this, utils = global.utils, consts = global.consts;
-    var _css = {
-        riaTemplate:'ria-template'
-    };
-    thisModule.css = _css;
-    Object.freeze(_css);
 
     var AppType = RIAPP.BaseObject.extend({
             _nextInstanceNum:0, //static
             _coreModules:{}, //static
             _userModules:{}, //static
             _DATA_BIND_SELECTOR:['*[', consts.DATA_ATTR.DATA_BIND, ']'].join(''),
-            _TEMPLATES_DATA_BIND_SELECTOR:['section.', _css.riaTemplate, ' *[', consts.DATA_ATTR.DATA_BIND, ']'].join(''),
+            _TEMPLATES_DATA_BIND_SELECTOR:['section.', RIAPP.css_riaTemplate, ' *[', consts.DATA_ATTR.DATA_BIND, ']'].join(''),
+            //static method
+            registerModule:function (name, fn_module) {
+                if (!!AppType._userModules[name])
+                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_MODULE_ALREDY_REGISTERED, name));
+                AppType._userModules[name] = fn_module;
+            },
             _create:function (options) {
                 this._super();
                 var self = this, opts = utils.extend(false, { app_name:'default',
@@ -1616,6 +1781,7 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 };
                 this._global = global;
                 //each Element view created by application stored in this hash map
+                //it keeps them alive until they are destroyed
                 this._elViewStore = {};
                 //used to create sequential keys to store new element views
                 this._nextElViewStoreKey = 0;
@@ -1658,11 +1824,12 @@ RIAPP.Global._coreModules.riapp = function (global) {
                     self._dbContext.destroy();
                     self._dbContext = null;
                 }
+                global._unregisterApp(self);
                 self._types._grids = {};
                 self._types._elViews = {};
                 self._exports = {};
                 self._global = null;
-                self.options = null;
+                self._options = null;
                 self._parser = null;
                 self._converters = {};
                 self._elViewStore = {};
@@ -1670,7 +1837,6 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 self._viewModels = {};
                 self._modInst = {};
                 self._bindingContentFactory = null;
-                global._unregisterApp(self);
                 self._super();
             },
             _getEventNames:function () {
@@ -1777,14 +1943,14 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 }
             },
             //checks for binding html elements attributes and parses attribute data to create binding for elements
-            _bindTemplateElements:function (templateID, templateEl) {
+            _bindTemplateElements:function (templateEl) {
                 var self = this, allBoundElem = Array.fromList(templateEl.querySelectorAll(self._DATA_BIND_SELECTOR));
                 var lftm = utils.LifeTimeScope.create();
                 if (templateEl.hasAttribute(consts.DATA_ATTR.DATA_BIND)) {
                     allBoundElem.push(templateEl);
                 }
 
-                allBoundElem.forEach(function (target, i) {
+                allBoundElem.forEach(function (target) {
                     var op, j, len, binding, bindstr, temp_opts, elView;
                     if (self._isInsideDataForm(target))
                         return;
@@ -1818,8 +1984,8 @@ RIAPP.Global._coreModules.riapp = function (global) {
             _isInsideDataForm:function (el) {
                 if (!el)
                     return false;
-                var parent = el.parentNode, document = global.document;
-                if (!!parent && parent !== document) {
+                var parent = el.parentElement;
+                if (!!parent) {
                     if (!this._isDataForm(parent)) {
                         return this._isInsideDataForm(parent);
                     }
@@ -1832,15 +1998,11 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 var self = this;
                 scope = scope || global.document;
                 //select all elements with binding attributes inside templates
-                var elemInTemplates = Array.fromList(scope.querySelectorAll(self._TEMPLATES_DATA_BIND_SELECTOR));
                 var allBoundElem = Array.fromList(scope.querySelectorAll(self._DATA_BIND_SELECTOR));
                 var lftm = utils.LifeTimeScope.create();
 
                 allBoundElem.forEach(function (target) {
                     var app_name, binding, bindstr, temp_opts, bind_op, elView;
-                    if (elemInTemplates.indexOf(target) > -1) {  //skip elements inside template
-                        return;
-                    }
                     if (!isDataForm && self._isInsideDataForm(target)) { //skip elements inside dataform
                         return;
                     }
@@ -2044,7 +2206,11 @@ RIAPP.Global._coreModules.riapp = function (global) {
             },
             //set up application - use fn_sandbox callback to setUp handlers on objects, create viewModels and etc.
             startUp:function (fn_sandbox) {
-                var self = this;
+                var self = this, fn_init = function () {
+                    fn_sandbox.apply(self, [self]);
+                    self.setUpBindings();
+                };
+
                 try {
                     if (!utils.check_is.Function(fn_sandbox))
                         throw new Error(RIAPP.ERRS.ERR_APP_SETUP_INVALID);
@@ -2057,25 +2223,31 @@ RIAPP.Global._coreModules.riapp = function (global) {
                             serviceUrl:self.options.service_url,
                             metadata:self.options.metadata
                         });
-                        self._dbContext.waitForInitialized(function () {
-                            fn_sandbox.apply(self, [self]);
-                            self.setUpBindings();
-                        }, null);
+                        global._waitForNotLoading(function(){
+                            self._dbContext.waitForInitialized(fn_init, null);
+                        },null);
                     }
                     else {
-                        fn_sandbox.apply(self, [self]);
-                        self.setUpBindings();
+                        global._waitForNotLoading(fn_init,null);
                     }
                 }
                 catch (ex) {
                     global.reThrow(ex, self._onError(ex, self));
                 }
             },
-            //static method
-            registerModule:function (name, fn_module) {
-                if (!!AppType._userModules[name])
-                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_MODULE_ALREDY_REGISTERED, name));
-                AppType._userModules[name] = fn_module;
+            /*
+                fn_loader must load template and return promise which resolves
+                with loaded HTML string
+            */
+            registerTemplateLoader:function (name, fn_loader) {
+                global._registerTemplateLoader(this.appName+'.'+name, fn_loader);
+            },
+            getTemplateLoader:function (name) {
+                var res = global._getTemplateLoader(this.appName+'.'+name);
+                if (!res){
+                    res = global._getTemplateLoader(name);
+                }
+                return res;
             },
             toString:function () {
                 return 'Application' + this._instanceNum;
@@ -3323,190 +3495,249 @@ RIAPP.Application._coreModules.template = function (app) {
 
     /*define Template class and register its type*/
     thisModule.Template = RIAPP.BaseObject.extend({
-            _app:app,
-            _create:function (templateID) {
-                this._super();
-                this._dctxt = null;
-                this._el = null;
-                this._isDisabled = false;
-                this._lfTime = null;
-                this._templateID = templateID;
-                this._templElView = undefined;
-                if (!!this._templateID)
-                    this._loadTemplate();
-            },
-            _getBindings:function () {
-                if (!this._lfTime)
-                    return [];
-                var arr = this._lfTime.getObjs(), res = [];
-                for (var i = 0, len = arr.length; i < len; i += 1) {
-                    if (Binding.isPrototypeOf(arr[i]))
-                        res.push(arr[i]);
+        _app:app,
+        _create:function (templateID) {
+            this._super();
+            this._dctxt = null;
+            this._el = null;
+            this._isDisabled = false;
+            this._lfTime = null;
+            this._templateID = templateID;
+            this._templElView = undefined;
+            this._promise = null;
+            if (!!this._templateID)
+                this._loadTemplate();
+        },
+        _getBindings:function () {
+            if (!this._lfTime)
+                return [];
+            var arr = this._lfTime.getObjs(), res = [];
+            for (var i = 0, len = arr.length; i < len; i += 1) {
+                if (Binding.isPrototypeOf(arr[i]))
+                    res.push(arr[i]);
+            }
+            return res;
+        },
+        _getElViews:function () {
+            if (!this._lfTime)
+                return [];
+            var arr = this._lfTime.getObjs(), res = [];
+            for (var i = 0, len = arr.length; i < len; i += 1) {
+                if (BaseElView.isPrototypeOf(arr[i]))
+                    res.push(arr[i]);
+            }
+            return res;
+        },
+        _getTemplateElView:function () {
+            if (!this._lfTime || this._templElView === null)
+                return null;
+            if (!!this._templElView)
+                return this._templElView;
+            var res = null, elView = this._app.modules.elview.TemplateElView, arr = this._getElViews();
+            for (var i = 0, j = arr.length; i < j; i += 1) {
+                if (elView.isPrototypeOf(arr[i])) {
+                    res = arr[i];
+                    break;
                 }
-                return res;
-            },
-            _getElViews:function () {
-                if (!this._lfTime)
-                    return [];
-                var arr = this._lfTime.getObjs(), res = [];
-                for (var i = 0, len = arr.length; i < len; i += 1) {
-                    if (BaseElView.isPrototypeOf(arr[i]))
-                        res.push(arr[i]);
-                }
-                return res;
-            },
-            _getTemplateElView:function () {
-                if (!this._lfTime || this._templElView === null)
-                    return null;
-                if (!!this._templElView)
-                    return this._templElView;
-                var res = null, elView = this._app.modules.elview.TemplateElView, arr = this._getElViews();
-                for (var i = 0, j = arr.length; i < j; i += 1) {
-                    if (elView.isPrototypeOf(arr[i])) {
-                        res = arr[i];
-                        break;
-                    }
-                }
-                this._templElView = res;
-                return res;
-            },
-            _loadTemplate:function () {
-                var el, tel, tid = this._templateID;
-                this._unloadTemplate();
-                if (!!tid) {
-                    el = utils.getElementById(tid);
-                    if (!el)
-                        throw new Error(String.format(RIAPP.ERRS.ERR_TEMPLATE_ID_INVALID, this._templateID));
-                    tel = el.cloneNode(true);
-                    tel.removeAttribute('id');
-                    this._lfTime = this._app._bindTemplateElements(tid, tel);
-                    this._el = tel;
-                    var telv = this._getTemplateElView();
-                    if (!!telv) {
-                        telv.templateLoaded(this);
-                    }
-                }
-            },
-            _updateBindingSource:function () {
-                var i, len, obj, bindings = this._getBindings();
-                for (i = 0, len = bindings.length; i < len; i += 1) {
-                    obj = bindings[i];
-                    obj.isDisabled = this._isDisabled;
-                    if (!obj.isSourceFixed)
-                        obj.source = this._dctxt;
-                }
-            },
-            _updateIsDisabled:function () {
-                var i, len, obj, bindings = this._getBindings(), elViews = this._getElViews(),
-                    DataFormElView = this._app._getElViewType(consts.ELVIEW_NM.DATAFORM);
-                for (i = 0, len = bindings.length; i < len; i += 1) {
-                    obj = bindings[i];
-                    obj.isDisabled = this._isDisabled;
-                }
-                for (i = 0, len = elViews.length; i < len; i += 1) {
-                    obj = elViews[i];
-                    if (DataFormElView.isPrototypeOf(obj) && !!obj.form){
-                        obj.form.isDisabled = this._isDisabled;
-                    }
-                }
-            },
-            _unloadTemplate:function () {
-                try {
-                    if (!!this._el) {
-                        var telv = this._templElView;
-                        this._templElView = undefined;
-                        if (!!telv) {
-                            telv.templateUnloading(this);
-                        }
-                    }
-                }
-                finally {
-                    if (!!this._lfTime) {
-                        this._lfTime.destroy();
-                        this._lfTime = null;
-                    }
-
-                    if (!!this._el) {
-                        global.$(this._el).remove();
-                    }
-                    this._el = null;
-                }
-            },
-            destroy:function () {
-                if (this._isDestroyed)
-                    return;
-                this._isDestroying = true;
-                this._dctxt = null;
-                this._unloadTemplate();
-                this._templateID = null;
-                this._templElView = undefined;
-                this._super();
-            },
-            //find elements which has specific data-name attribute value
-            //returns plain array of elements, or empty array
-            findElByDataName:function (name) {
-                var $foundEl = global.$(this._el).find(['*[', consts.DATA_ATTR.DATA_NAME, '="', name, '"]'].join(''));
-                return $foundEl.toArray();
-            },
-            findElViewsByDataName:function (name) {
-                //first return elements with the needed data attributes those are inside template
-                var self = this, els = this.findElByDataName(name), res = [];
-                els.forEach(function (el) {
-                    var elView = self._app._getElView(el);
-                    if (!!elView)
-                        res.push(elView);
+            }
+            this._templElView = res;
+            return res;
+        },
+        //returns promise which resolves with loaded template DOM element
+        _loadTemplateElAsync:function (name) {
+            var self = this, fn_loader = self._app.getTemplateLoader(name), deferred;
+            if (!!fn_loader){
+                return fn_loader().then(function(html){
+                    var $tel = global.$(html), el =$tel.get(0);
+                    return el;
                 });
-                return res;
-            },
-            toString:function () {
-                return 'Template';
             }
-        },{
-            dataContext:{
-                set:function (v) {
-                    if (this._dctxt !== v) {
-                        this._dctxt = v;
-                        this.raisePropertyChanged('dataContext');
-                        this._updateBindingSource();
-                    }
-                },
-                get:function () {
-                    return this._dctxt;
+            else
+            {
+                deferred = utils.createDeferred();
+                deferred.reject(new Error(String.format(RIAPP.ERRS.ERR_TEMPLATE_ID_INVALID, self._templateID)));
+                return deferred.promise();
+            }
+        },
+        _loadTemplate:function () {
+            var self = this, tid = self._templateID, promise;
+            self._unloadTemplate();
+            if (!!tid) {
+                promise = self._loadTemplateElAsync(tid);
+
+                if (promise.state() == "pending"){
+                    self._el = global.document.createElement("div");
+                    self._promise = utils.createDeferred();
+                    promise.then(function(){
+                        self._promise.resolve();
+                    });
+                    promise = global.$.when(promise,self._promise);
                 }
-            },
-            templateID:{
-                set:function (v) {
-                    if (this._templateID !== v) {
-                        this._templateID = v;
-                        this._loadTemplate();
-                        this.raisePropertyChanged('templateID');
-                        this._updateBindingSource();
-                    }
-                },
-                get:function () {
-                    return this._templateID;
-                }
-            },
-            el:{
-                get:function () {
-                    return this._el;
-                }
-            },
-            isDisabled:{
-                set:function (v) {
-                    if (this._isDisabled !== v) {
-                        this._isDisabled = !!v;
-                        this._updateIsDisabled();
-                        this.raisePropertyChanged('isDisabled');
-                    }
-                },
-                get:function () {
-                    return this._isDisabled;
+
+                promise.then(function(tel){
+                        if (self._isDestroyed || self._isDestroying)
+                            return;
+                        var asyncLoad = !!self._promise;
+                        self._promise = null;
+                        if (!tel){
+                            self._unloadTemplate();
+                            return;
+                        }
+                        if (asyncLoad) {
+                            self._el.appendChild(tel);
+                        }
+                        self._lfTime = self._app._bindTemplateElements(tel);
+                        self._el = tel;
+                        var telv = self._getTemplateElView();
+                        if (!!telv) {
+                            telv.templateLoaded(self);
+                        }
+                        if (asyncLoad){
+                            self._updateBindingSource();
+                        }
+
+                    },
+                    function(arg){
+                        if (self._isDestroyed || self._isDestroying)
+                            return;
+                        self._promise = null;
+                        if (arg == 'cancel')
+                            return;
+                        if (!!arg && !!arg.message)
+                            self._app._onError(arg,self);
+                        else
+                            self._app._onError(new Error(String.format(RIAPP.ERRS.ERR_TEMPLATE_ID_INVALID, self._templateID)),self);
+                    });
+            }
+        },
+        _updateBindingSource:function () {
+            var i, len, obj, bindings = this._getBindings();
+            for (i = 0, len = bindings.length; i < len; i += 1) {
+                obj = bindings[i];
+                obj.isDisabled = this._isDisabled;
+                if (!obj.isSourceFixed)
+                    obj.source = this._dctxt;
+            }
+        },
+        _updateIsDisabled:function () {
+            var i, len, obj, bindings = this._getBindings(), elViews = this._getElViews(),
+                DataFormElView = this._app._getElViewType(consts.ELVIEW_NM.DATAFORM);
+            for (i = 0, len = bindings.length; i < len; i += 1) {
+                obj = bindings[i];
+                obj.isDisabled = this._isDisabled;
+            }
+            for (i = 0, len = elViews.length; i < len; i += 1) {
+                obj = elViews[i];
+                if (DataFormElView.isPrototypeOf(obj) && !!obj.form){
+                    obj.form.isDisabled = this._isDisabled;
                 }
             }
-        }, function (obj) {
-            app.registerType('Template', obj);
-        });
+        },
+        _unloadTemplate:function () {
+            try {
+                if (!!this._el) {
+                    var telv = this._templElView;
+                    this._templElView = undefined;
+                    if (!!telv) {
+                        telv.templateUnloading(this);
+                    }
+                }
+            }
+            finally {
+                if (!!this._lfTime) {
+                    this._lfTime.destroy();
+                    this._lfTime = null;
+                }
+
+                if (!!this._el) {
+                    global.$(this._el).remove();
+                }
+                this._el = null;
+            }
+        },
+        destroy:function () {
+            if (this._isDestroyed)
+                return;
+            this._isDestroying = true;
+            if (!!this._promise){
+                this._promise.reject('cancel');
+                this._promise = null;
+            }
+            this._dctxt = null;
+            this._unloadTemplate();
+            this._templateID = null;
+            this._templElView = undefined;
+            this._super();
+        },
+        //find elements which has specific data-name attribute value
+        //returns plain array of elements, or empty array
+        findElByDataName:function (name) {
+            var $foundEl = global.$(this._el).find(['*[', consts.DATA_ATTR.DATA_NAME, '="', name, '"]'].join(''));
+            return $foundEl.toArray();
+        },
+        findElViewsByDataName:function (name) {
+            //first return elements with the needed data attributes those are inside template
+            var self = this, els = this.findElByDataName(name), res = [];
+            els.forEach(function (el) {
+                var elView = self._app._getElView(el);
+                if (!!elView)
+                    res.push(elView);
+            });
+            return res;
+        },
+        toString:function () {
+            return 'Template';
+        }
+    },{
+        dataContext:{
+            set:function (v) {
+                if (this._dctxt !== v) {
+                    this._dctxt = v;
+                    this.raisePropertyChanged('dataContext');
+                    this._updateBindingSource();
+                }
+            },
+            get:function () {
+                return this._dctxt;
+            }
+        },
+        templateID:{
+            set:function (v) {
+                if (this._templateID !== v) {
+                    if (!!this._promise){
+                        this._promise.reject('cancel'); //cancel previous load
+                        this._promise = null;
+                    }
+                    this._templateID = v;
+                    this._loadTemplate();
+                    this.raisePropertyChanged('templateID');
+                    this._updateBindingSource();
+                }
+            },
+            get:function () {
+                return this._templateID;
+            }
+        },
+        el:{
+            get:function () {
+                return this._el;
+            }
+        },
+        isDisabled:{
+            set:function (v) {
+                if (this._isDisabled !== v) {
+                    this._isDisabled = !!v;
+                    this._updateIsDisabled();
+                    this.raisePropertyChanged('isDisabled');
+                }
+            },
+            get:function () {
+                return this._isDisabled;
+            }
+        }
+    }, function (obj) {
+        app.registerType('Template', obj);
+    });
 };
 
 RIAPP.Application._coreModules.mvvm = function (app) {
@@ -4598,7 +4829,7 @@ RIAPP.Application._coreModules.collection = function (app) {
                 }
                 else {
                     pos = itemPos;
-                    this._items.splice(pos, 0, item);
+                    utils.insertIntoArray(this._items,item,pos);
                 }
                 this._itemsByKey[item._key] = item;
                 this._onItemsChanged({ change_type:COLL_CHANGE_TYPE.ADDED, items:[item], pos:[pos] });
@@ -4837,11 +5068,10 @@ RIAPP.Application._coreModules.collection = function (app) {
                 }
                 if (!this._itemsByKey[item._key])
                     return;
-                var oldPos = this._items.indexOf(item);
+                var oldPos = utils.removeFromArray(this._items,item);
                 if (oldPos < 0) {
                     throw new Error(RIAPP.ERRS.ERR_ITEM_IS_NOTFOUND);
                 }
-                this._items.splice(oldPos, 1);
                 delete this._itemsByKey[item._key];
                 delete this._errors[item._key];
                 this._onRemoved(item, oldPos);
@@ -8241,11 +8471,10 @@ RIAPP.Application._coreModules.db = function (app) {
                 }
                 if (!this._itemsByKey[item._key])
                     return;
-                var oldPos = this._items.indexOf(item);
+                var oldPos = utils.removeFromArray(this._items,item);
                 if (oldPos < 0) {
                     throw new Error(RIAPP.ERRS.ERR_ITEM_IS_NOTFOUND);
                 }
-                this._items.splice(oldPos, 1);
                 delete this._itemsByKey[item._key];
                 delete this._errors[item._key];
                 this.totalCount = this.totalCount - 1;
@@ -8788,15 +9017,13 @@ RIAPP.Application._coreModules.db = function (app) {
                 }
             },
             _checkChildFKey:function (item) {
-                var self = this, savedKey = self._saveChildFKey, fkey, arr, idx;
+                var self = this, savedKey = self._saveChildFKey, fkey, arr;
                 self._saveChildFKey = null;
                 fkey = self.getChildFKey(item);
                 if (fkey !== savedKey) {
                     if (!!savedKey) {
                         arr = self._childMap[savedKey];
-                        idx = arr.indexOf(item);
-                        if (idx > -1)
-                            arr.splice(idx, 1);
+                        utils.removeFromArray(arr,item);
                         if (arr.length == 0) {
                             delete self._childMap[savedKey];
                         }
@@ -8848,9 +9075,8 @@ RIAPP.Application._coreModules.db = function (app) {
                 if (!!fkey) {
                     arr = this._childMap[fkey];
                     if (!!arr) {
-                        idx = arr.indexOf(item);
+                        idx = utils.removeFromArray(arr,item);
                         if (idx > -1) {
-                            arr.splice(idx, 1);
                             if (arr.length == 0)
                                 delete this._childMap[fkey];
                             changedKey = fkey;
@@ -11023,11 +11249,10 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 }
                 if (this._rows.length === 0)
                     return;
-                var i = this._rows.indexOf(row), rowkey = row.itemKey;
+                var rowkey = row.itemKey, i = utils.removeFromArray(this._rows,row), oldRow;
                 try {
                     if (i > -1) {
-                        var oldRow = this._rows[i];
-                        this._rows.splice(i, 1);
+                        oldRow = row;
                         if (!(oldRow._isDestroying || oldRow._isDestroyed))
                             oldRow.destroy();
                     }
@@ -13218,9 +13443,6 @@ RIAPP.Application._coreModules.elview = function (app) {
                 var base_events = this._super();
                 return ['keypress'].concat(base_events);
             },
-            destroy:function () {
-                this._super();
-            },
             toString:function () {
                 return 'TextBoxElView';
             }
@@ -13622,6 +13844,83 @@ RIAPP.Application._coreModules.elview = function (app) {
             thisModule.TemplateElView = obj;
             app.registerType('TemplateElView',obj);
             app.registerElView('template', obj);
+        });
+
+    var DynaContentElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataContext = null;
+                this._template = null;
+            },
+            _templateChanged: function(){
+                this.raisePropertyChanged('templateID');
+                if (!this._template)
+                    return;
+                this.$el.empty().append(this._template.el);
+            },
+            updateTemplate: function(name){
+                var self = this;
+                if (!name){
+                    if (!!this._template){
+                        this._template.destroy();
+                        this._template = null;
+                        self._templateChanged();
+                    }
+                    return;
+                }
+                if (!this._template){
+                    this._template = this._app.getType('Template').create(name);
+                    this._template.dataContext = this._dataContext;
+                    this._template.addOnPropertyChange('templateID',function(s,a){
+                        self._templateChanged();
+                    },this._objId);
+                    self._templateChanged();
+                    return;
+                }
+                this._template.templateID = name;
+            },
+            destroy:function () {
+                if (!!this._template){
+                    this._template.destroy();
+                    this._template = null;
+                }
+                this._dataContext = null;
+                this._super();
+            }
+        },
+        {
+            templateID:{
+                set:function (v) {
+                    this.updateTemplate(v);
+                },
+                get:function () {
+                    if (!this._template)
+                        return null;
+                    return this._template.templateID;
+                }
+            },
+            template:{
+                get:function () {
+                    return this._template;
+                }
+            },
+            dataContext:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataContext !== v) {
+                        this._dataContext = v;
+                        if (!!this._template)
+                            this._template.dataContext = this._dataContext;
+                    }
+                },
+                get:function () {
+                    return this._dataContext;
+                }
+            }
+        }, function (obj) {
+            thisModule.DynaContentElView = obj;
+            app.registerType('DynaContentElView',obj);
+            app.registerElView(global.consts.ELVIEW_NM.DYNACONT, obj);
         });
 
     var ButtonElView = CommandElView.extend({

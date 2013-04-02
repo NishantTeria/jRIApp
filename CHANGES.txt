@@ -24,11 +24,12 @@ property bindingContentFactory, where you can set your extended version.
 global.consts.Key enumeration was renamed to global.consts.KEYS
  
 
-PLANNED FOR VERSION 1.2:
+VERSION 1.2:
+All changes nonbreaking.
 
-I want to add the support in the framework to load page's templates from the server.
-Now framework support templates but they are mainly used to provide small parts of UI in the whole page structure
-and their definitions are embedded in the page. 
-Pages' templates will replace whole page views, they can be switched, so the view is dynamically changed.
-The url of the page and the background data (DbContexts' instances) will remain alive when the page view is switched.
-So the data will be in sync between different views, because only views are changing, not their data.
+docs will be updated shortly. At present GridDemo has a lot of comments to track new features.
+ 
+1) Added dynamic loading of templates from server 
+2) Added new element view "dynacontent" which can display templated content with switching of template and dataContext
+3) Added new event 'load' to the Global object which is equivalent to jQuery.ready event - only more framework friendly.   
+4) And restructured some code

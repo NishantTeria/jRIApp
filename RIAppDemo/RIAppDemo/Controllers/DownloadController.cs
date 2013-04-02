@@ -40,5 +40,16 @@ namespace RIAppDemo.Controllers
                 return new HttpStatusCodeResult(404);
             }
         }
+
+        public ActionResult DownloadTemplate(string name)
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string path1 = Path.Combine(baseDir, "Templates");
+            string path2 = Path.GetFullPath(Path.Combine(path1, string.Format("{0}.html", name)));
+            if (!path2.StartsWith(path1))
+                throw new Exception("template name is invalid");
+            return new FilePathResult(path2, System.Net.Mime.MediaTypeNames.Text.Plain);
+        }
+    
     }
 }

@@ -1,5 +1,5 @@
 RIAPP.Application.registerModule('common', function (app) {
-    var global = app.global, utils = global.utils, consts = global.consts, TEXT = RIAPP.localizable.TEXT;
+    var thisModule = this, global = app.global, utils = global.utils, consts = global.consts, TEXT = RIAPP.localizable.TEXT;
 
     var NotConverter = app.getConverter('BaseConverter').extend({
         convertToSource:function (val, param, dataContext) {
@@ -12,7 +12,7 @@ RIAPP.Application.registerModule('common', function (app) {
         app.registerConverter('notConverter', obj);
     });
 
-    var DialogVM = app.getType('BaseViewModel').extend(
+    var DialogVM = thisModule.DialogVM =  app.getType('BaseViewModel').extend(
         {
             //constructor function
             _create:function () {
@@ -221,7 +221,7 @@ RIAPP.Application.registerModule('common', function (app) {
             app.registerElView('fileImage', obj);
         });
 
-    var ErrorViewModel = app.getType('BaseViewModel').extend({
+    var ErrorViewModel = thisModule.ErrorViewModel =  app.getType('BaseViewModel').extend({
             _create: function () {
                 this._super();
                 var self = this;
@@ -231,8 +231,8 @@ RIAPP.Application.registerModule('common', function (app) {
                 this._dialogVM = DialogVM.create();
                 var dialogOptions = {
                     templateID:'errorTemplate',
-                    width: 450,
-                    height: 200,
+                    width: 500,
+                    height: 300,
                     title:'',
                     canCancel: false,
                     fn_OnShow: function(dialog){

@@ -105,6 +105,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controllers\TemplatesController.cs" />
     <Compile Include="Controllers\FolderBrowserServiceController.cs" />
     <Compile Include="Controllers\DemoController.cs" />
     <Compile Include="Controllers\DownloadController.cs" />
@@ -207,6 +208,8 @@
     <Content Include="Scripts\RIAppDemo\header.js" />
     <Content Include="Scripts\RIAppDemo\manyToManyDemo.js" />
     <Content Include="Scripts\RIAppDemo\masterDetailDemo.js" />
+    <Content Include="Templates\sizeDisplayTemplate.html" />
+    <Content Include="Templates\productEditTemplate.html" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
@@ -270,6 +273,9 @@
   <ItemGroup>
     <Content Include="Views\Demo\BrowserDemo.cshtml" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Templates\DataGridDemo.cshtml" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -286,7 +292,7 @@
         <WebProjectProperties>
           <UseIIS>False</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>4598</DevelopmentServerPort>
+          <DevelopmentServerPort>4267</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
           <IISUrl>http://localhost:2911/RIAppDemo</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>

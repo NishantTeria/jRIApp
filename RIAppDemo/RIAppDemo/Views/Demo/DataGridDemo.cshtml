@@ -56,26 +56,54 @@ table.ria-data-table tr:nth-child(even) {
 </style>
 
 <script type="text/javascript">
-    $(document).ready(function ($) {
-        //global error handler - the last resort (typically display message to the user)
-        RIAPP.global.addHandler('error', function (sender, args) {
+   //global error handler - the last resort (typically display message to the user)
+    RIAPP.global.addHandler('error', function (sender, args) {
             debugger;
             alert(args.error.message);
-        });
-       
-        var fn_Main = function (app) {
+    });
+
+
+    //RIAPP.global.UC - this is special namespace (empty object) to which we can attach any user code (functions, objects, etc)
+    //which can be globally visible - usefull when we don't want to introduce new global variables
+    //***THIS particular function initializes view models for the application***
+     RIAPP.global.UC.fn_initApp = function (app) {
             //initialize images folder path
             app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+            
+            //the way to access types is through modules - or use app.getType, which is more convenient
+            //to import the types
+            var gridDemoMod = app.modules.gridDemo, commonMod = app.modules.common, headerMod = app.modules.header;
 
             //create view models which are in our custom modules
-            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
-            app.VM.headerVM = app.getType('custom.HeaderVM').create();
-            app.VM.productVM = app.getType('custom.ProductViewModel').create();
-            app.VM.uploadVM = app.getType('custom.UploadThumbnailVM').create('@Url.RouteUrl("Default",new {controller="Upload", action="ThumbnailUpload"})');
+            app.VM.errorVM = commonMod.ErrorViewModel.create(); //app.getType('custom.ErrorViewModel').create();
+            app.VM.headerVM = headerMod.HeaderVM.create();
+            app.VM.productVM = gridDemoMod.ProductViewModel.create();
+            app.VM.uploadVM = gridDemoMod.UploadThumbnailVM.create('@Url.RouteUrl("Default",new {controller="Upload", action="ThumbnailUpload"})');
             //adding event handler for our custom event
             app.VM.uploadVM.addHandler('files_uploaded',function(s,a){
                 a.product.refresh(); //need to update ThumbnailPhotoFileName
             });
+
+            //***here is two examples how to register loaders for individual templates***
+            //application registers template loaders in its own application's namespace
+            //if global loaded templates with the same name
+            //then application's loaders will take precedence over global ones
+            app.registerTemplateLoader('productEditTemplate', function(name){
+                return app.global.$.get('@Url.Action("DownloadTemplate", "Download", new {name="productEditTemplate"})');
+            });
+           
+            //using memoize pattern so there will not be repeated loads of the same template
+            app.registerTemplateLoader('sizeDisplayTemplate', 
+              (function(name){
+                    var savePromise;
+                    return function(name){
+                        if (!!savePromise)
+                            return savePromise;
+                        savePromise = app.global.$.get('@Url.Action("DownloadTemplate", "Download", new { name = "sizeDisplayTemplate" })');
+                        return savePromise;
+                    };
+                }())
+            );
 
             //example of ajax call to load lookups - first load lookups, then load products
             //at the end it displays in an alert out of band data returned from the server (see ReadProduct data service method)
@@ -96,7 +124,12 @@ table.ria-data-table tr:nth-child(even) {
 
         }; //end fn_Main
 
-          //create application instance
+     //this handler is invoked when the document DOM structure is loaded - the same as using jQuery.ready
+     RIAPP.global.addHandler('load', function (sender, args) {
+           //we load templates from the server
+           RIAPP.global.loadTemplates('@Url.Action("Download", "Templates", new {name="DataGridDemo"})');
+           
+           //create application instance
            var app = RIAPP.Application.create({ app_name: 'default', //each application's name on the page must be unique
                 service_url: '@Url.RouteUrl("Default",new {controller="RIAppDemoService", action=""})',
                 metadata: @Html.Action("Metadata", "RIAppDemoService"),
@@ -105,7 +138,7 @@ table.ria-data-table tr:nth-child(even) {
             });
 
             //here we could process application's errors
-        app.addHandler('error', function (sender, data) {
+            app.addHandler('error', function (sender, data) {
                 debugger;
                 data.isHandled = true;
                 if (!app.VM.errorVM)
@@ -126,15 +159,26 @@ table.ria-data-table tr:nth-child(even) {
                 }
             });
 
-            //start application - fn_Main will init all view models
-            //at the end (after executing fn_Main)  this method performs databinding
-            app.startUp(fn_Main);
-    });
-
+            //start application - fn_initApp will init all view models
+            //after executing our fn_initApp this method performs databinding
+            app.startUp(app.global.UC.fn_initApp);
+     });
 </script>
 
 
 <h2  style="display:inline-block;">@ViewBag.Title</h2>
+@*
+<!--
+    this shows the use of new element view- dynacontent
+    it is used to display different template in one region just by switching its templateID property
+    it also has dataContext property to set datacontext to the template
+    these two properties are data bindable- we can bind them to our view model to change display dynamically  
+    P.S. - i will add new separate demo for this usefull feature
+-->
+<div id="demoDynaContent" data-bind="{this.templateID,to=templateID,source=VM.productVM}" data-view="name=dynacontent">
+</div>
+*@
+
 <header id="title" style="width:99%; border:1px Solid LightBlue; padding:5px;margin-bottom:5px;-moz-border-radius: 4px;border-radius:4px;">
 <a href="#" id="expander" style="margin-left:2px;" data-bind="{this.command,to=expanderCommand,mode=OneWay,source=VM.headerVM}" data-view="name=expander"></a>
 <span style="margin-left:5px;">Filter</span>
@@ -199,228 +243,8 @@ table.ria-data-table tr:nth-child(even) {
         <button class="btn btn-info btn-small" style="float:right;" data-bind="{this.command,to=addNewCommand,mode=OneWay,source=VM.productVM}"><i class="icon-plus"></i>&nbsp;New Product</button>
      </div>
  </div>
- 
+
 @section RiaTemplates
 {
-    <div id="sizeDisplayTemplate">
-        <span>Size:</span> <span style="color: Blue; margin-left: 5px;" data-bind="{this.value,to=Size}">
-        </span>
-    </div>
-    <div id="sizeEditTemplate">
-        <span>Size:</span>
-        <input type="text" style="width: 150px; margin-left: 5px;" data-bind="{this.value,to=Size,mode=TwoWay}" />
-    </div>
-    <div id="productEditTemplate">
-        <div style="width: 470px; font-size: 12px;" data-bind="{this.dataContext,mode=OneWay}"
-            data-view="name=dataform">
-            <table style="width: 95%">
-                <thead>
-                    <tr>
-                        <th>
-                            Название
-                        </th>
-                        <th>
-                            Значение
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            ID:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:ProductID"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Name:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:Name,css:{displayCss:'name-display',editCss:'name-edit'},multyline:{rows:3,cols:20,wrap:hard}">
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            ProductNumber:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:ProductNumber"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Color:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:Color"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Cost:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:StandardCost"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Price:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:ListPrice"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Size:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:Size"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Weight:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:Weight"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Category:
-                        </td>
-                        <td>
-                            <span data-content="fieldName=ProductCategoryID,lookup:{dataSource=dbContext.dbSets.ProductCategory,valuePath=ProductCategoryID,textPath=Name},css:{editCss:'listbox-edit'}">
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Model:
-                        </td>
-                        <td>
-                            <span data-content="fieldName=ProductModelID,lookup:{dataSource=dbContext.dbSets.ProductModel,valuePath=ProductModelID,textPath=Name},css:{editCss:'listbox-edit'}">
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            SellStartDate:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:SellStartDate"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            SellEndDate:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:SellEndDate"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            DiscontinuedDate:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:DiscontinuedDate"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            rowguid:
-                        </td>
-                        <td>
-                            <span data-content="fieldName:rowguid"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            When Modified:
-                        </td>
-                        <td>
-                            <span data-content="fieldName=ModifiedDate"></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            IsActive:
-                        </td>
-                        <td>
-                            <span data-content="fieldName=IsActive"></span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @*Grid details product template*@
-    <div id="productDetailsTemplate">
-        <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.productVM"
-            data-view="name='tabs'">
-            <div id="myTabs">
-                <ul>
-                    <li><a href="#a">Tab 1</a></li>
-                    <li><a href="#b">Tab 2</a></li>
-                </ul>
-                <div id="a">
-                    <span>Product Name: </span>
-                    <input type="text" style="color: Green; width: 220px; margin: 5px;" data-bind="{this.value,to=Name,mode=TwoWay}" />
-                    <br />
-                    <a class="btn btn-info btn-small" data-bind="{this.command,to=testInvokeCommand,source=VM.productVM}{this.commandParam}"
-                        data-view="options={tip='Invokes method on the server and displays result'}">
-                        Click me to invoke service method</a>
-                </div>
-                <div id="b">
-                    <img style="float:left" data-bind="{this.id,to=ProductID}{this.fileName,to=ThumbnailPhotoFileName}" alt="Product Image" src="" data-view="name=fileImage,options={baseUri:'@Url.RouteUrl("Default", new { controller = "Download", action = "ThumbnailDownload" })'}"/><br />
-                    <div style="float: left; margin-left: 8px;">
-                        click to download the image: <a class="btn btn-info btn-small" data-bind="{this.text,to=ThumbnailPhotoFileName}{this.id,to=ProductID}" data-view="name=fileLink,options={baseUri:'@Url.RouteUrl("Default", new { controller = "Download", action = "ThumbnailDownload" })'}">
-                        </a>
-                    </div>
-                    <div style="clear: both; padding: 5px 0px 5px 0px;">
-                        <!--bind commandParameter to current datacontext, that is product entity-->
-                        <a class="btn btn-info btn-small" data-name="upload" data-bind="{this.command,to=dialogCommand,source=VM.uploadVM}{this.commandParam}"
-                            data-view="options={tip='click me to upload product thumbnail photo'}">Upload product
-                            thumbnail</a>
-                    </div>
-                </div>
-            </div>
-            <!--myTabs-->
-        </div>
-    </div>
-    @*upload thumbnail dialog template*@
-    <div id="uploadTemplate" data-bind="{this.command,to=templateCommand,source=VM.uploadVM}"
-        data-view="name=template">
-        <!--dummy form action to satisfy HTML5 specification-->
-        <form data-name="uploadForm" action='#'>
-        <div data-name="uploadBlock">
-            <input data-name="files-to-upload" type="file" style="visibility: hidden;" />
-            <div class="input-append">
-                <input data-name="files-input" class="span4" type="text">
-                <a data-name="btn-input" class="btn btn-info btn-small"><i class="icon-folder-open">
-                </i></a><a data-name="btn-load" class="btn btn-info btn-small" data-bind="{this.command,to=uploadCommand}"
-                    data-view="options={tip='Click to upload a file'}">Upload</a>
-            </div>
-            <span>File info:</span><text>&nbsp;</text><div style="display: inline-block" data-bind="{this.html,to=fileInfo}">
-            </div>
-            <div data-name="progressDiv">
-                <progress data-name="progressBar" class="span4" value="0" max="100">
-                </progress><span data-name="percentageCalc"></span>
-            </div>
-        </div>
-        </form>
-    </div>
-    @*test service invoke method result display*@
-    <div id="invokeResultTemplate">
-        <div style="width: 100%; height: 100%; background-color: White; color: Blue;">
-            <div style="display: inline-block" data-bind="{this.html,to=invokeResult}">
-            </div>
-        </div>
-    </div>
+    
 }

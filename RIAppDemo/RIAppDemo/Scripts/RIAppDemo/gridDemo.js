@@ -1,8 +1,8 @@
 RIAPP.Application.registerModule('gridDemo', function (app) {
-    var global = app.global, utils = global.utils, consts = global.consts;
+    var thisModule = this, global = app.global, utils = global.utils, consts = global.consts;
 
     //private helper function (used inside this module only)
-    var addTextQuery = function(query, fldName, val){
+    var addTextQuery = thisModule.addTextQuery = function(query, fldName, val){
         var tmp;
         if (!!val){
             if (utils.str.startsWith(val,'%') && utils.str.endsWith(val,'%')){
@@ -210,7 +210,7 @@ RIAPP.Application.registerModule('gridDemo', function (app) {
             }
         }, null );
 
-    var ProductViewModel = app.getType('BaseViewModel').extend({
+    var ProductViewModel = thisModule.ProductViewModel = app.getType('BaseViewModel').extend({
             _create: function () {
                 this._super();
                 var self = this;
@@ -221,6 +221,7 @@ RIAPP.Application.registerModule('gridDemo', function (app) {
                 this._selected ={};
                 this._selectedCount =0;
                 this._invokeResult = null;
+                this._templateID = 'productEditTemplate';
 
                 //when currentItem property changes, invoke our viewmodel's method
                 this._dbSet.addOnPropertyChange('currentItem', function (sender, data) {
@@ -458,6 +459,11 @@ RIAPP.Application.registerModule('gridDemo', function (app) {
             }
         },
         {
+            templateID:{
+                get:function () {
+                    return this._templateID;
+                }
+            },
             testInvokeCommand:{
                 get:function () {
                     return this._testInvokeCommand;
@@ -705,7 +711,7 @@ RIAPP.Application.registerModule('gridDemo', function (app) {
         return els[0];
     };
 
-    var UploadThumbnailVM = BaseUploadVM.extend({
+    var UploadThumbnailVM = thisModule.UploadThumbnailVM = BaseUploadVM.extend({
             _create:function (uploadUrl) {
                 this._super(uploadUrl);
                 var self = this;
