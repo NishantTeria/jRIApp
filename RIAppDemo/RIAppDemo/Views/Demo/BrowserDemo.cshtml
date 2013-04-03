@@ -53,49 +53,46 @@
 
 
 <script type="text/javascript">
-    $(document).ready(function ($) {
-        RIAPP.global.addHandler('error', function (sender, args) {
-            debugger;
-            alert(args.error.message);
+    RIAPP.global.addHandler('error', function (sender, args) {
+        debugger;
+        alert(args.error.message);
+    });
+    RIAPP.global.UC.fn_Main = function (app) {
+        //initialize images folder path
+        app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+        app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+        var FolderBrowser= app.getType('custom.FolderBrowser');
+        //initialize static properties shared between instances
+        FolderBrowser.service_url = '@Url.RouteUrl("Default",new {controller="FolderBrowserService", action=""})';
+        FolderBrowser.metadata= @Html.Action("Metadata", "FolderBrowserService");
+        app.VM.fbrowserVM1 = app.getType('custom.FolderBrowserVM').create(false);
+        app.VM.fbrowserVM2 = app.getType('custom.FolderBrowserVM').create(true);
+    }; //end fn_Main
+
+    RIAPP.global.addHandler('load', function (sender, args) {
+        //create ria application without dbContext, and pass an array of our custom modules
+        var app = RIAPP.Application.create({ app_name: 'default', 
+            createDbContext: false, 
+            moduleNames: ['common','browserDemoMod'] });
+
+        app.addHandler('error', function (sender, data) {
+            data.isHandled = true;
+            if (!app.VM.errorVM)
+            {
+                alert(data.error.message);
+                return;
+            }
+            if (data && data.error)
+            {
+                app.VM.errorVM.error = data.error;
+            }
+            else
+                app.VM.errorVM.error = Error('Application error!');
+            app.VM.errorVM.showDialog();
         });
-
-        var fn_Main = function (app) {
-            //initialize images folder path
-            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
-            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
-            var FolderBrowser= app.getType('custom.FolderBrowser');
-            //initialize static properties shared between instances
-            FolderBrowser.service_url = '@Url.RouteUrl("Default",new {controller="FolderBrowserService", action=""})';
-            FolderBrowser.metadata= @Html.Action("Metadata", "FolderBrowserService");
-            app.VM.fbrowserVM1 = app.getType('custom.FolderBrowserVM').create(false);
-            app.VM.fbrowserVM2 = app.getType('custom.FolderBrowserVM').create(true);
-
-        }; //end fn_Main
-
-   
-            //create ria application without dbContext, and supply an array of our custom modules
-          var app = RIAPP.Application.create({ app_name: 'default', 
-          createDbContext: false, 
-          moduleNames: ['common','browserDemoMod'] });
-
-           app.addHandler('error', function (sender, data) {
-                data.isHandled = true;
-                if (!app.VM.errorVM)
-                {
-                  alert(data.error.message);
-                  return;
-                }
-                if (data && data.error)
-                {
-                    app.VM.errorVM.error = data.error;
-                }
-                else
-                    app.VM.errorVM.error = Error('Application error!');
-                app.VM.errorVM.showDialog();
-            });
-
-           app.startUp(fn_Main);
-   });//$(document).ready
+     
+        app.startUp(RIAPP.global.UC.fn_Main);
+    });
 </script>
 
 <h2 style="display:inline-block;">@ViewBag.Title</h2>

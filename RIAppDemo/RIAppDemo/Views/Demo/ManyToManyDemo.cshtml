@@ -94,20 +94,20 @@ div.ria-dataform .address { width: 60%; }
 
 
 <script type="text/javascript">
-   RIAPP.global.UC.fn_Main = function (app) {
-            //initialize images folder path
-            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
-            
-            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
-            //create view models which are in our custom modules
-            app.VM.customerVM = app.getType('custom.CustomerVM').create();
-            app.VM.customerVM.load();
-   }; //end fn_Main
-
    RIAPP.global.addHandler('error', function (sender, args) {
             debugger;
             alert(args.error.message);
         });
+
+   RIAPP.global.UC.fn_Main = function (app) {
+       //initialize images folder path
+       app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+            
+       app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+       //create view models which are in our custom modules
+       app.VM.customerVM = app.getType('custom.CustomerVM').create();
+       app.VM.customerVM.load();
+   }; //end fn_Main
    
    RIAPP.global.addHandler('load', function (sender, args) {
            //create ria application
@@ -146,8 +146,7 @@ div.ria-dataform .address { width: 60%; }
                 }
              }
             );
-           
-
+       
             app.startUp(RIAPP.global.UC.fn_Main);
         });
 

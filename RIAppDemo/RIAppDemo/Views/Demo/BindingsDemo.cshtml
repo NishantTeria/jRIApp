@@ -42,46 +42,48 @@
 
 
 <script type="text/javascript">
-    $(document).ready(function ($) {
-        RIAPP.global.addHandler('error', function (sender, args) {
-            alert(args.error.message);
-        });
-
-        var fn_Main = function (app) {
-            //initialize images folder path
-            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
-
-            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
-            //create objects which are in our custom modules
-            app.VM.testObject1 = app.getType('custom.TestObject').create('Test Initial Value');
-
-            //usage example: creating binding in code
-            app.getType('Binding').create({ sourcePath: 'testProperty1', targetPath: 'testProperty2',
-                source: app.VM.testObject1, mode: 'OneWay',
-                target: app.VM.testObject1, converter: app.getConverter('uppercaseConverter'), converterParam: null
-            });
-        }; //end fn_Main
-
-   
-            //create ria application without dbContext, and supply an array of our custom modules
-        var app = RIAPP.Application.create({ app_name: 'default', 
-            createDbContext: false,
-            moduleNames: ['common', 'bindingsDemoMod']
-        });
-
-        app.addHandler('error', function (sender, data) {
-            debugger;
-               data.isHandled = true;
-               if (!app.VM.errorVM) {
-                   alert(data.error.message);
-                   return;
-               }
-               app.VM.errorVM.error = data.error;
-               app.VM.errorVM.showDialog();
-            });
-
-            app.startUp(fn_Main);
+    RIAPP.global.addHandler('error', function (sender, args) {
+        alert(args.error.message);
     });
+
+    RIAPP.global.UC.fn_Main = function (app) {
+        //initialize images folder path
+        app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+
+        app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+        //create objects which are in our custom modules
+        app.VM.testObject1 = app.getType('custom.TestObject').create('Test Initial Value');
+
+        //usage example: creating a binding in code
+        app.getType('Binding').create({
+            sourcePath: 'testProperty1', targetPath: 'testProperty2',
+            source: app.VM.testObject1, mode: 'OneWay',
+            target: app.VM.testObject1, converter: app.getConverter('uppercaseConverter'), converterParam: null
+        });
+    }; //end fn_Main
+
+     RIAPP.global.addHandler('load', function (sender, args) {
+         //create ria application without dbContext, and pass an array of our custom modules
+         var app = RIAPP.Application.create({
+             app_name: 'default',
+             createDbContext: false,
+             moduleNames: ['common', 'bindingsDemoMod']
+         });
+
+         app.addHandler('error', function (sender, data) {
+             debugger;
+             data.isHandled = true;
+             if (!app.VM.errorVM) {
+                 alert(data.error.message);
+                 return;
+             }
+             app.VM.errorVM.error = data.error;
+             app.VM.errorVM.showDialog();
+         });
+
+
+         app.startUp(RIAPP.global.UC.fn_Main);
+     });
 </script>
 
 <h2  style="display:inline-block;">@ViewBag.Title</h2>

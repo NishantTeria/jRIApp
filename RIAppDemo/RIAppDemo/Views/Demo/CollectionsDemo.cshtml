@@ -42,37 +42,37 @@
 
 
 <script type="text/javascript">
-    $(document).ready(function ($) {
-        RIAPP.global.addHandler('error', function (sender, args) {
-            alert(args.error.message);
-        });
+    RIAPP.global.addHandler('error', function (sender, args) {
+        alert(args.error.message);
+    });
+    RIAPP.global.UC.fn_Main = function (app) {
+        //initialize images folder path
+        app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+        app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+        //create view models which are in our custom modules
+        app.VM.demoVM = app.getType('custom.RadioDemo2VM').create();
+    }; //end fn_Main
 
-        var fn_Main = function (app) {
-            //initialize images folder path
-            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
-            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
-            //create view models which are in our custom modules
-            app.VM.demoVM = app.getType('custom.RadioDemo2VM').create();
-        }; //end fn_Main
-
-   
+    RIAPP.global.addHandler('load', function (sender, args) {
         //create ria application without dbContext
-        var app = RIAPP.Application.create({ app_name: 'default', 
+        var app = RIAPP.Application.create({
+            app_name: 'default',
             createDbContext: false,
             moduleNames: ['common', 'collectionsDemoModule']
         });
 
-           app.addHandler('error', function (sender, data) {
-               data.isHandled = true;
-               if (!app.VM.errorVM) {
-                   alert(data.error.message);
-                   return;
-               }
-               app.VM.errorVM.error = data.error;
-               app.VM.errorVM.showDialog();
-            });
+        app.addHandler('error', function (sender, data) {
+            data.isHandled = true;
+            if (!app.VM.errorVM) {
+                alert(data.error.message);
+                return;
+            }
+            app.VM.errorVM.error = data.error;
+            app.VM.errorVM.showDialog();
+        });
 
-            app.startUp(fn_Main);
+
+        app.startUp(RIAPP.global.UC.fn_Main);
     });
 </script>
 
