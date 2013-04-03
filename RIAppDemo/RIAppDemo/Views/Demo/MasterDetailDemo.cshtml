@@ -57,13 +57,7 @@ table.ria-data-table tr:nth-child(even) {
 </style>
 
 <script type="text/javascript">
-    $(document).ready(function ($) {
-        RIAPP.global.addHandler('error', function (sender, args) {
-            debugger;
-            alert(args.error.message);
-        });
-
-        var fn_Main = function (app) {
+   RIAPP.global.UC.fn_Main = function (app) {
             //initialize images folder path
             app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
             app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
@@ -71,8 +65,13 @@ table.ria-data-table tr:nth-child(even) {
             app.VM.customerVM = app.getType('custom.CustomerVM').create();
             app.VM.customerVM.load();
         }; //end fn_Main
+         
+   RIAPP.global.addHandler('error', function (sender, args) {
+            debugger;
+            alert(args.error.message);
+        });
 
-   
+   RIAPP.global.addHandler('load', function (sender, args) {
             //create ria application
            var app = RIAPP.Application.create({ app_name: 'default',
                 service_url: '@Url.RouteUrl("Default",new {controller="RIAppDemoService", action=""})',
@@ -112,10 +111,8 @@ table.ria-data-table tr:nth-child(even) {
             });
     
 
-            app.startUp(fn_Main);
-    });
-
-
+            app.startUp(RIAPP.global.UC.fn_Main);
+        });
 </script>
 
 <h2  style="display:inline-block;">@ViewBag.Title</h2>

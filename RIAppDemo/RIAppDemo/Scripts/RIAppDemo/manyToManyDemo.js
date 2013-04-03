@@ -426,7 +426,7 @@ RIAPP.Application.registerModule('manyToManyDemo', function (app) {
                         self.searchString = null;
                     },
                     fn_OnOK: function(dialog){
-                        var DIALOG_ACTION = app.modules.datadialog.consts.DIALOG_ACTION;
+                        var DIALOG_ACTION = dialog.DIALOG_ACTION;
                         if (!self._isAddingNew){
                             return DIALOG_ACTION.Default; //allow close dialog
                         }
@@ -441,13 +441,14 @@ RIAPP.Application.registerModule('manyToManyDemo', function (app) {
                         return DIALOG_ACTION.StayOpen;
                     },
                     fn_OnCancel: function(dialog){
+                        var DIALOG_ACTION = dialog.DIALOG_ACTION;
                         if (!self._isAddingNew){
-                            return dialog.DIALOG_ACTION.Default;
+                            return DIALOG_ACTION.Default;
                         }
                         if (!!self._newAddress){
                             self._cancelAddNewAddress();
                         }
-                        return dialog.DIALOG_ACTION.StayOpen;
+                        return DIALOG_ACTION.StayOpen;
                     }
                 };
                 this._dialogVM.createDialog('addressDialog', dialogOptions);

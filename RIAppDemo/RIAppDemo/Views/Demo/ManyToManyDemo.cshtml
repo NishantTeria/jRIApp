@@ -94,25 +94,23 @@ div.ria-dataform .address { width: 60%; }
 
 
 <script type="text/javascript">
-    $(document).ready(function ($) {
-        RIAPP.global.addHandler('error', function (sender, args) {
-            debugger;
-            alert(args.error.message);
-        });
-        var custAddrVM = null; 
-        var fn_Main = function (app) {
+   RIAPP.global.UC.fn_Main = function (app) {
             //initialize images folder path
             app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
             
             app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
             //create view models which are in our custom modules
             app.VM.customerVM = app.getType('custom.CustomerVM').create();
-            custAddrVM = app.VM.customerVM.customerAddressVM;
             app.VM.customerVM.load();
-        }; //end fn_Main
+   }; //end fn_Main
 
+   RIAPP.global.addHandler('error', function (sender, args) {
+            debugger;
+            alert(args.error.message);
+        });
    
-            //create ria application
+   RIAPP.global.addHandler('load', function (sender, args) {
+           //create ria application
            var app = RIAPP.Application.create({ app_name: 'default',
                 service_url: '@Url.RouteUrl("Default",new {controller="RIAppDemoService", action=""})',
                 metadata: @Html.Action("Metadata", "RIAppDemoService"),
@@ -150,9 +148,8 @@ div.ria-dataform .address { width: 60%; }
             );
            
 
-            app.startUp(fn_Main);
-    });
-
+            app.startUp(RIAPP.global.UC.fn_Main);
+        });
 
 </script>
 
@@ -379,7 +376,7 @@ div.ria-dataform .address { width: 60%; }
         </div>
     </div>
     @*used for display of customer's address on the right panel*@
-    <div id="addressTemplate" data-role="template"  class="addressTemplate">
+    <div id="addressTemplate" data-role="template" class="addressTemplate">
         <fieldset>
             <legend style="margin-bottom: 4px; font-size: 14px; font-weight: bold;"><span class="address"
                 data-bind="{this.value,to=AddressType}"></span></legend>
