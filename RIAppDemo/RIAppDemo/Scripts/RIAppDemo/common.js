@@ -238,7 +238,8 @@ RIAPP.Application.registerModule('common', function (app) {
                     fn_OnShow: function(dialog){
                         while (!!self.error && !!self.error.origError){
                             //get real error
-                            self.error = self.error.origError;
+                            self._error = self.error.origError;
+                            self.raisePropertyChanged('error');
                         }
 
                         if (app.getType('AccessDeniedError').isPrototypeOf(self.error))
