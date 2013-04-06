@@ -4,7 +4,7 @@ jRIApp
 <b>RIA application framework for building LOB applications</b>
 <br/>
 You can watch video of the demo on <a href="http://youtu.be/CxWcC2O8u-k" target="_blank">YouTube Main</a> and
-<a href="http://youtu.be/CxWcC2O8u-k" target="_blank">YouTube SPA</a>
+<a href="http://youtu.be/m2lxFWhJghA" target="_blank">YouTube SPA</a>
 <br/>
 You can discuss the framework on <a href="https://groups.google.com/forum/#!forum/jriapp-framework" target="_blank">Google Groups</a>
 <p style="color:blue">the current version of the framework is updated to 1.2.1, see CHANGES.txt for details.</p>
