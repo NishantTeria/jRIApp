@@ -24,7 +24,7 @@ property bindingContentFactory, where you can set your extended version.
 global.consts.Key enumeration was renamed to global.consts.KEYS
  
 
-VERSION 1.2:
+VERSION 1.2.0:
 breaking changes:
 templates need attribute data-role="template"
 the templates which are loaded individually don't need it, but it does not hurt to add it.
@@ -37,5 +37,23 @@ nonbreaking changes:
 3) Added new event 'load' to the Global object which is equivalent to jQuery.ready event - only more framework friendly.   
 4) And restructured some code
 
+
+docs will be updated shortly. At present GridDemo has a lot of comments to track new features.
+
+
+VERSION 1.2.1:
+
+1) After creation all the framework's objects (derived from BaseObject) are sealed, and an attempt to
+add new nonexestent property to the object's 'THIS' value will result in error. It is done to control
+that the properties on the object which are manipulated are really exist.
+
+2) Now all framework's objects after calling their destroy method has automatically change their _isDestroyCalled field
+to true. This is usefull to check that the object is really alive after some asynchronous operation. Because
+in between the object can be destroyed.
+
+3) Performed more debugging on the framework. Fixed small bugs and glitches.
+
+4) Added new demo page (SPA demo) to the Demo project. It is done to show the capability to change page views
+without reloading whole page, therefore effectively preserving state between views switches. 
 
 docs will be updated shortly. At present GridDemo has a lot of comments to track new features.

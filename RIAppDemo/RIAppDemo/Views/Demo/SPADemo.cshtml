@@ -1,0 +1,175 @@
+﻿@using System.Text
+@using RIAPP.DataService
+@using RIAppDemo.BLL.DataServices
+@using RIAppDemo.Utils
+
+@{
+    Layout = "~/Views/Shared/_LayoutDemo.cshtml";
+}
+
+@{
+    ViewBag.Title = "Single Page Application Demo";
+}
+
+@section CssImport
+{
+}
+
+@section JSImport
+{
+    <script src="@Url.Content("~/Scripts/RIAppDemo/common.js",true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/autocomplete.js",true)" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/RIAppDemo/spaDemo.js",true)" type="text/javascript"></script>
+}
+
+<style type="text/css">
+    .space {
+        width:10px;
+        display:inline-block;
+    }
+
+    #demoHeader label {
+        color: Blue;
+    }
+
+    #demoContent {
+        overflow: visible;
+        height: 450px;
+        vertical-align: top;
+    }
+
+    .customerTableWrap {
+        height: 400px;
+        width: 100%;
+    }
+
+    .custInfo {
+        color: Blue;
+    }
+
+    .custEdit {
+    }
+
+    .listbox-edit select {
+        width: 75%;
+    }
+
+    .qtyEdit > input[type="text"] {
+        min-width: 20px;
+        width: 45px;
+    }
+
+    form.customerInfo {
+        width: 100%;
+        padding: 15px;
+    }
+
+    .orderDetailTableWrap {
+        max-height: 200px;
+        width: 100%;
+    }
+
+    div.ria-dataform .addressLine {
+        margin-bottom: 2px;
+        margin-top: 2px;
+    }
+
+    div.ria-dataform .addressLabel {
+        display: inline-block;
+        width: 9em;
+        color: Blue;
+    }
+
+    div.ria-dataform .address {
+    }
+
+    .autocompleteTableWrap {
+        max-height: 150px;
+        width: 100%;
+        margin: 0px;
+        padding: 0px;
+    }
+
+    .autocompleteTableHeader {
+        display: none;
+    }
+
+    table.ria-data-table tr:nth-child(even) {
+        background-color: #ECF2F6;
+    }
+
+    .addressTableWrap {
+        height: 100px;
+        width: 100%;
+    }
+
+    .addressTableHeader {
+    }
+
+</style>
+
+<script type="text/javascript">
+    RIAPP.global.addHandler('error', function (sender, args) {
+        debugger;
+        alert(args.error.message);
+    });
+
+    RIAPP.global.UC.fn_Main = function (app) {
+            //initialize images folder path
+            app.global.defaults.imagesPath = '@Url.Content("~/Scripts/jriapp/img/")';
+            app.VM.errorVM = app.getType('custom.ErrorViewModel').create();
+            //create view models which are in our custom modules
+            app.VM.customerVM = app.getType('custom.CustomerVM').create();
+            //app.VM.customerVM = app.getType('custom.CustomerAddressVM').create(app.VM.customerVM);
+            app.VM.customerVM.load();
+        }; //end fn_Main
+         
+    RIAPP.global.addHandler('load', function (sender, args) {
+          //we load templates from the server
+           RIAPP.global.loadTemplates('@Url.Action("SPADemoTemplate", "Templates")');
+           
+            //create ria application
+           var app = RIAPP.Application.create({ app_name: 'default',
+                service_url: '@Url.RouteUrl("Default",new {controller="RIAppDemoService", action=""})',
+                metadata: @Html.Action("Metadata", "RIAppDemoService"),
+                createDbContext: true,
+                moduleNames:['common','autocompleteModule','spaDemo']
+            });
+
+            app.addHandler('error', function (sender, data) {
+               debugger;
+                data.isHandled = true;
+                if (!app.VM.errorVM)
+                {
+                  alert(data.error.message);
+                  return;
+                }
+
+                app.VM.errorVM.error = data.error;
+                app.VM.errorVM.showDialog();
+            });
+
+            //define calculated fields in the application's event handler
+            app.addHandler('define_calc', function (sender, data) {
+                function toText(str){
+                    if (str === null)
+                        return '';
+                    else
+                        return str;
+                }
+
+                if (data.dbSetName == 'Customer' && data.fieldName == 'Name') {
+                    data.getFunc = function () {
+                        return toText(this.LastName) + '  ' + toText(this.MiddleName) + '  ' + toText(this.FirstName);
+                    };
+                }
+
+            });
+
+            app.startUp(RIAPP.global.UC.fn_Main);
+        });
+</script>
+<h2  style="display:inline-block;">@ViewBag.Title</h2><span class="space"></span><span>is based on new element view - <span style="color:blue;">dynacontent</span></span>
+<div id="demoContent" data-bind="{this.isBusy,to=dbContext.isBusy}" data-view="name=busy_indicator">
+    <div id="demoDynaContent" data-bind="{this.templateID,to=viewName,source=VM.customerVM.uiMainView}{this.dataContext,source=VM.customerVM}" data-view="name=dynacontent"></div>
+</div>

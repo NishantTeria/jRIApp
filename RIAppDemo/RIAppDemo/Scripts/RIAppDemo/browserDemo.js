@@ -135,7 +135,6 @@ RIAPP.Application.registerModule('browserDemoMod', function (app) {
                 if (this._isDestroyed)
                     return;
                 var self = this;
-                this._isDestroying = true;
                 if (!!this._dbContext){
                     this._dbContext.destroy();
                 }
@@ -220,7 +219,6 @@ RIAPP.Application.registerModule('browserDemoMod', function (app) {
                 if (this._isDestroyed)
                     return;
                 var self = this;
-                this._isDestroying = true;
                 if (!!self._folderBrowser){
                     self._folderBrowser.destroy();
                     self._folderBrowser = null;

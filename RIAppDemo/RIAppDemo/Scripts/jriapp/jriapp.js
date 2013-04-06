@@ -3,6 +3,9 @@ if (!window['RIAPP']) {
     var RIAPP = {};
 }
 
+RIAPP.global = null;
+RIAPP.Application = null;
+
 RIAPP.utils = (function () {
     if (!Array['clone']) {
         Array.clone = function (array) {
@@ -128,19 +131,18 @@ RIAPP.utils = (function () {
     return utils;
 })();
 
-RIAPP.global = null;
-RIAPP.Application = null;
 
 RIAPP.BaseObject = {
     _create:function _create() {
         this.__callState = null;
         this.__events = null;
         this._isDestroyed = false;
-        this._isDestroying = false;
+        this._isDestroyCalled = false;
     },
     create:function create() {
         var instance = Object.create(this);
         instance._create.apply(instance, arguments);
+        Object.seal(instance);
         return instance;
     },
     extend:function extend(properties, propertyDescriptors, fn_afterExtend) {
@@ -177,18 +179,40 @@ RIAPP.BaseObject = {
             var p = Object.getOwnPropertyDescriptor(obj, name), fn, fn_str;
             if (!!p.value && RIAPP.utils.isFunc(p.value)) {
                 fn_str = p.value.toString();
+                fn = obj[name];
                 //this wrapping of the original function is only for the functions which use _super function calls
                 if (fn_str.indexOf('._super(') > -1) {
-                    fn = obj[name];
+                    if (name == 'destroy'){
+                        p.value = function () {
+                            var old = this.__callState;
+                            this.__callState = {methodName:name, definedOn:obj};
+                            try {
+                                this._isDestroyCalled = true;
+                                return fn.apply(this, arguments);
+                            }
+                            finally {
+                                this.__callState = old;
+                            }
+                        };
+                    }
+                    else{
+                        p.value = function () {
+                            var old = this.__callState;
+                            this.__callState = {methodName:name, definedOn:obj};
+                            try {
+                                return fn.apply(this, arguments);
+                            }
+                            finally {
+                                this.__callState = old;
+                            }
+                        };
+                    }
+                    Object.defineProperty(obj, name, p);
+                }
+                else if (name == 'destroy'){
                     p.value = function () {
-                        var old = this.__callState;
-                        this.__callState = {methodName:name, definedOn:obj};
-                        try {
-                            return fn.apply(this, arguments);
-                        }
-                        finally {
-                            this.__callState = old;
-                        }
+                        this._isDestroyCalled = true;
+                        return fn.apply(this, arguments);
                     };
                     Object.defineProperty(obj, name, p);
                 }
@@ -338,9 +362,6 @@ RIAPP.BaseObject = {
         if (this.__eventNames.indexOf(name) === -1)
             throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_EVENT_INVALID, name));
     },
-    _isNotDestroyed:function () {
-        return (!(this._isDestroying || this._isDestroyed));
-    },
     raisePropertyChanged:function (name) {
         var data = { property:name };
         this._raiseEvent('0' + name, data);
@@ -392,7 +413,6 @@ RIAPP.BaseObject = {
         }
         finally {
             this.__events = null;
-            this._isDestroying = false;
         }
     },
     toString:function () {
@@ -410,7 +430,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.0",
+        version:"1.2.1",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         _coreModules:{}, //static
@@ -653,7 +673,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
         destroy:function () {
             if (this._isDestroyed)
                 return;
-            this._isDestroying = true;
+            
             var self = this;
             if (!!self._waitQueue){
                 self._waitQueue.destroy()
@@ -707,8 +727,8 @@ RIAPP.Global = RIAPP.BaseObject.extend({
                 if (!!err && !!err.message){
                     self._onError(err,self);
                 }
-                else if (!!err){
-                    self._onError(new Error(err.toString()),self);
+                else if (!!err && !!err.responseText){
+                    self._onError(new Error(err.responseText),self);
                 }
                 else
                     self._onError(new Error('Failed to load template section from: '+url),self);
@@ -1142,7 +1162,14 @@ RIAPP.Global._coreModules.utils = function (global) {
                 });
             if (!!fn_error)
                 promise.fail(function(err){
-                    var er = '' + err;
+                    var er = 'Load Failed!';
+                    if (!!err && !!err.message){
+                        er = err.message;
+                    }
+                    else if (!!err &&!!err.responseText)
+                    {
+                        er = err.responseText;
+                    }
                     fn_error.call(context, er);
                 });
             return promise;
@@ -1502,7 +1529,7 @@ RIAPP.Global._coreModules.utils = function (global) {
         },
         destroy:function () {
             this._objs.forEach(function (obj) {
-                if (obj._isNotDestroyed())
+                if (!obj._isDestroyCalled)
                     obj.destroy();
             });
             this._objs = [];
@@ -1673,8 +1700,10 @@ RIAPP.Global._coreModules.utils = function (global) {
                 this._queue[property] = propQueue;
                 this._owner.addOnPropertyChange(property, function (s, a) {
                     setTimeout(function () {
+                        if (self._isDestroyCalled)
+                            return;
                         self._checkQueue(property, self._owner[property]);
-                    }, 50);
+                    }, 0);
                 }, self.uniqueID);
             }
             var task = {predicate:opts.predicate,
@@ -1689,8 +1718,10 @@ RIAPP.Global._coreModules.utils = function (global) {
             }
             else {
                 setTimeout(function () {
+                    if (self._isDestroyCalled)
+                        return;
                     self._checkQueue(property, self._owner[property]);
-                }, 50);
+                }, 0);
             }
         },
         destroy:function () {
@@ -1813,7 +1844,7 @@ RIAPP.Global._coreModules.riapp = function (global) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 var self = this;
                 if (!!self._lftmBind) {
                     self._lftmBind.destroy();
@@ -2307,6 +2338,12 @@ RIAPP.Global._coreModules.riapp = function (global) {
             VM:{
                 get:function () {
                     return this._viewModels;
+                }
+            },
+            //returns self reference
+            app:{
+                get:function () {
+                    return this;
                 }
             },
             localizable:{
@@ -2823,7 +2860,7 @@ RIAPP.Application._coreModules.baseElView = function (app) {
                 return !($el.prop('disabled'));
             },
             destroy:function () {
-                if (this._isDestroyed || !this._el)
+                if (this._isDestroyed)
                     return;
                 var $el = this._$el, el = this._el;
                 if (!!$el)
@@ -3244,20 +3281,20 @@ RIAPP.Application._coreModules.binding = function (app) {
                 }
             },
             _onTgtDestroyed:function (sender, args) {
-                if (this._isDestroyed || this._isDestroying)
+                if (this._isDestroyCalled)
                     return;
                 this.target = null;
             },
             _onSrcDestroyed:function (sender, args) {
                 var self = this;
-                if (self._isDestroyed || self._isDestroying)
+                if (self._isDestroyCalled)
                     return;
                 if (sender === self.source)
                     self.source = null;
                 else {
                     self._checkBounded(null, 'source', 0, self._srcPath);
                     setTimeout(function () {
-                        if (self._isDestroyed || self._isDestroying)
+                        if (self._isDestroyCalled)
                             return;
                         //rebind after source destroy fully completed
                         self._bindToSource();
@@ -3314,7 +3351,7 @@ RIAPP.Application._coreModules.binding = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 var self = this;
                 utils.forEachProp(this._bounds, function (key) {
                     var old = self._bounds[key];
@@ -3352,7 +3389,7 @@ RIAPP.Application._coreModules.binding = function (app) {
                     }
                     if (this._target !== v) {
                         var tgtObj = this._targetObj;
-                        if (!!tgtObj && !tgtObj._isDestroyed && !tgtObj._isDestroying) {
+                        if (!!tgtObj && !tgtObj._isDestroyCalled) {
                             this._ignoreTgtChange = true;
                             try {
                                 this.targetValue = null;
@@ -3575,7 +3612,7 @@ RIAPP.Application._coreModules.template = function (app) {
                 }
 
                 promise.then(function(tel){
-                        if (self._isDestroyed || self._isDestroying)
+                        if (self._isDestroyCalled)
                             return;
                         var asyncLoad = !!self._promise;
                         self._promise = null;
@@ -3598,7 +3635,7 @@ RIAPP.Application._coreModules.template = function (app) {
 
                     },
                     function(arg){
-                        if (self._isDestroyed || self._isDestroying)
+                        if (self._isDestroyCalled)
                             return;
                         self._promise = null;
                         if (arg == 'cancel')
@@ -3658,7 +3695,7 @@ RIAPP.Application._coreModules.template = function (app) {
         destroy:function () {
             if (this._isDestroyed)
                 return;
-            this._isDestroying = true;
+            
             if (!!this._promise){
                 this._promise.reject('cancel');
                 this._promise = null;
@@ -3807,6 +3844,8 @@ RIAPP.Application._coreModules.mvvm = function (app) {
                 return isHandled;
             },
             toString:function () {
+                if (!!this._typeName)
+                    return this._super();
                 return 'BaseViewModel';
             }
         },
@@ -3980,7 +4019,7 @@ RIAPP.Application._coreModules.baseContent = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 var displayInfo = this._getDisplayInfo(), $p = global.$(this._parentEl);
                 $p.removeClass(_css.content);
                 $p.removeClass(_css.required);
@@ -4090,7 +4129,7 @@ RIAPP.Application._coreModules.baseContent = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 var $p = global.$(this._parentEl);
                 $p.removeClass(_css.content);
                 this._cleanUp();
@@ -6190,7 +6229,6 @@ RIAPP.Application._coreModules.db = function (app) {
                     this._vals[fieldName] = null;
                 }, this);
                 this._initRowInfo(row, names);
-                Object.seal(this);
             },
             _initRowInfo:function (row, names) {
                 if (!row)
@@ -8676,16 +8714,6 @@ RIAPP.Application._coreModules.db = function (app) {
                     self._onParentEdit(args.item, false, args.isCanceled);
                 }, self._objId, true);
                 ds._addHandler('item_deleting', function (sender, args) {
-                    if (ds !== sender) return;
-                    var DA = DELETE_ACTION, children = self.getChildItems(args.item);
-                    switch (self.onDeleteAction) {
-                        case DA.NoAction:
-                            if (children.length > 0) {
-                                args.isCancel = true;
-                                self._onError(new Error(RIAPP.ERRS.ERR_ASSOC_HAS_CHILDREN), self);
-                            }
-                            break;
-                    }
                 }, self._objId, true);
                 ds._addHandler('status_changed', function (sender, args) {
                     if (ds !== sender) return;
@@ -8940,6 +8968,8 @@ RIAPP.Application._coreModules.db = function (app) {
 
                     if (!this._changedTimeout) {
                         this._changedTimeout = setTimeout(function () {
+                            if (self._isDestroyCalled)
+                                return;
                             self._changedTimeout = null;
                             var changed = self._changed;
                             self._changed = {};
@@ -8953,7 +8983,7 @@ RIAPP.Application._coreModules.db = function (app) {
                                     self._onChildrenChanged(fkey);
                                 }
                             });
-                        }, 100);
+                        }, 50);
                     }
                 }
             },
@@ -9207,7 +9237,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 return this._mapChildren(this._childDS.items);
             },
             destroy:function () {
-                this._isDestroying = true;
+                
                 clearTimeout(this._changedTimeout);
                 this._changedTimeout = null;
                 this._changed = {};
@@ -9306,6 +9336,8 @@ RIAPP.Application._coreModules.db = function (app) {
                     return;
                 clearTimeout(self._refreshTimeout);
                 self._refreshTimeout = setTimeout(function () {
+                    if (self._isDestroyCalled)
+                        return;
                     var items = self._association.getChildItems(self._parentItem);
                     if (!!self._fn_filter) {
                         items = items.filter(self._fn_filter);
@@ -9825,7 +9857,10 @@ RIAPP.Application._coreModules.datagrid = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                if (!!this._clickTimeOut){
+                    clearTimeout(this._clickTimeOut);
+                    this._clickTimeOut = null;
+                }
                 var $div = global.$(this._div);
                 $div.remove();
                 this._div.cell = null;
@@ -9937,12 +9972,10 @@ RIAPP.Application._coreModules.datagrid = function (app) {
         destroy:function () {
             if (this._isDestroyed)
                 return;
-            this._isDestroying = true;
             if (!!this._content) {
                 this._content.destroy();
                 this._content = null;
             }
-            this._initLookUpFn = null;
             this._super();
         },
         toString:function () {
@@ -10005,7 +10038,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 var imgs = this._div.getElementsByTagName('img');
                 for (var i = 0, len = imgs.length; i < len; i += 1) {
                     imgs[i].cell = null;
@@ -10091,7 +10124,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
         destroy:function () {
             if (this._isDestroyed)
                 return;
-            this._isDestroying = true;
+            
             if (!!this._content) {
                 this._content.destroy();
                 this._content = null;
@@ -10111,7 +10144,6 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._super();
                 this._row = row;
                 this._el = options.td;
-                this._isDestroying = false;
                 this._init(options);
             },
             _init:function (options) {
@@ -10124,9 +10156,9 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._row.el.appendChild(this._el);
             },
             destroy:function () {
-                if (this._isDestroyed || !this._el)
+                if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 if (!!this._template) {
                     this._template.destroy();
                     this._template = null;
@@ -10271,7 +10303,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 var grid = this._grid;
                 if (!!grid) {
                     if (this.isExpanded)
@@ -10465,9 +10497,9 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._cell = DetailsCell.create(this, {td:td, details_id:details_id});
             },
             destroy:function () {
-                if (this._isDestroyed || !this.el)
+                if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 utils.removeNode(this.el);
                 if (!!this._cell) {
                     this._cell.destroy();
@@ -10478,23 +10510,28 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._grid = null;
                 this._super();
             },
-            _setParentRow:function (v) {
+            _setParentRow:function (row) {
                 var self = this;
                 this._item = null;
                 this._cell.item = null;
                 utils.removeNode(this.el);
-                this._parentRow = v;
-                if (!!this._parentRow) {
-                    this._item = this._parentRow.item;
-                    this._cell.item = this._item;
-                    utils.insertAfter(this._parentRow.el, this.el);
-                    var $cell = global.$(this._cell._template.el);
-                    //var isLast = this.grid._getLastRow() === this._parentRow;
-                    $cell.slideDown('fast', function () {
-                        if (self._parentRow && self.grid._options.isUseScrollIntoDetails)
-                            self._parentRow.scrollIntoView(true);
-                    });
+                if (!row || row._isDestroyCalled){
+                    this._parentRow = null;
+                    return;
                 }
+                this._parentRow = row;
+                this._item = row.item;
+                this._cell.item = this._item;
+                utils.insertAfter(row.el, this.el);
+                var $cell = global.$(this._cell._template.el);
+                //var isLast = this.grid._getLastRow() === this._parentRow;
+                $cell.slideDown('fast', function () {
+                    var row = self._parentRow;
+                    if (!row || row._isDestroyCalled)
+                        return;
+                    if (self.grid._options.isUseScrollIntoDetails)
+                        row.scrollIntoView(true);
+                });
             },
             toString:function () {
                 return 'DetailsRow';
@@ -10543,7 +10580,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                     var self = this;
                     if (v !== this._parentRow) {
                         var $cell = global.$(this._cell._template.el);
-                        if (!!this._parentRow) {
+                        if (!!self._parentRow) {
                             $cell.slideUp('fast', function () {
                                 self._setParentRow(v);
                             });
@@ -10598,8 +10635,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                             global.currentSelectable = grid;
                             grid._setCurrentColumn(self);
                             if (DataCell.isPrototypeOf(cell)) {
-
-                                if (cell._clickTimeOut !== null) {
+                                if (!!cell._clickTimeOut) {
                                     clearTimeout(cell._clickTimeOut);
                                     cell._clickTimeOut = null;
                                     cell._onDblClicked();
@@ -10631,9 +10667,9 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                     this._div.html(this.title);
             },
             destroy:function () {
-                if (this._isDestroyed || !this.el)
+                if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 this._extcol.remove();
                 this._extcol = null;
                 this._div.get(0).cell = null;
@@ -10747,9 +10783,9 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 }
             },
             destroy:function () {
-                if (this._isDestroyed || !this.el)
+                if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 if (!!this._listBox) {
                     this._listBox.destroy();
                     this._listBox = null;
@@ -10961,6 +10997,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._app._types._registerGrid(this);
                 this._refreshGrid(); //fills all rows
                 this._updateColsDim();
+                this._onDSCurrentChanged();
             },
             _getEventNames:function () {
                 var base_events = this._super();
@@ -11056,8 +11093,10 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 }
                 return isHandled;
             },
-            _onDSCurrentChanged:function (args) {
-                var ds = this._dataSource, cur = ds.currentItem;
+            _onDSCurrentChanged:function () {
+                var ds = this._dataSource, cur;
+                if (!!ds)
+                    cur = ds.currentItem;
                 if (!cur)
                     this._updateCurrent(null, false);
                 else {
@@ -11107,10 +11146,14 @@ RIAPP.Application._coreModules.datagrid = function (app) {
 
                     if (!!args.isPageChanged) {
                         setTimeout(function () {
+                            if (self._isDestroyCalled)
+                                return;
                             self._onPageChanged();
                         }, 100);
                     }
                     setTimeout(function () {
+                        if (self._isDestroyCalled)
+                            return;
                         self._updateColsDim();
                     }, 200);
                 }
@@ -11202,7 +11245,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 }, self._objId);
                 ds.addOnPropertyChange('currentItem', function (sender, args) {
                     if (ds !== sender) return;
-                    self._onDSCurrentChanged(args);
+                    self._onDSCurrentChanged();
                 }, self._objId);
                 ds.addHandler('begin_edit', function (sender, args) {
                     if (ds !== sender) return;
@@ -11253,7 +11296,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 try {
                     if (i > -1) {
                         oldRow = row;
-                        if (!(oldRow._isDestroying || oldRow._isDestroyed))
+                        if (!oldRow._isDestroyCalled)
                             oldRow.destroy();
                     }
                 }
@@ -11283,8 +11326,6 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._currentRow = null;
             },
             _updateColsDim:function () {
-                if (!this._isNotDestroyed())
-                    return;
                 var width = 0, headerDiv = this._headerDiv;
                 this._columns.forEach(function (col) {
                     width += col.el.offsetWidth;
@@ -11394,7 +11435,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 return col;
             },
             _appendItems:function (newItems) {
-                if (this._isDestroyed)
+                if (this._isDestroyCalled)
                     return;
                 var self = this, item, tbody = this._tBodyEl;
                 for (var i = 0, k = newItems.length; i < k; i += 1) {
@@ -11646,7 +11687,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 if (!!this._details) {
                     this._details.destroy();
                     this._details = null;
@@ -11959,7 +12000,7 @@ RIAPP.Application._coreModules.pager = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 this._unbindDS();
                 this._clearContent();
                 this._$el.removeClass(_css.pager);
@@ -12435,7 +12476,7 @@ RIAPP.Application._coreModules.stackpanel = function (app) {
                 return t;
             },
             _appendItems:function (newItems) {
-                if (this._isDestroyed)
+                if (this._isDestroyCalled)
                     return;
                 var self = this;
                 newItems.forEach(function (item) {
@@ -12503,7 +12544,7 @@ RIAPP.Application._coreModules.stackpanel = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 global._onStackPanelRemoved(this);
                 this._unbindDS();
                 this._clearContent();
@@ -12639,7 +12680,7 @@ RIAPP.Application._coreModules.listbox = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 this._unbindDS();
                 this._$el.off('.' + this._objId);
                 if (!!this._css) {
@@ -12839,7 +12880,7 @@ RIAPP.Application._coreModules.listbox = function (app) {
                 ds.removeNSHandlers(self._objId);
             },
             _addOption:function (item, first) {
-                if (this._isDestroyed)
+                if (this._isDestroyCalled)
                     return null;
                 var oOption, key = '', val, text;
                 if (!!item) {
@@ -12868,7 +12909,7 @@ RIAPP.Application._coreModules.listbox = function (app) {
                 return oOption;
             },
             _removeOption:function (item) {
-                if (this._isDestroyed)
+                if (this._isDestroyCalled)
                     return;
                 var key = '', data, val;
                 if (!!item) {
@@ -13171,13 +13212,12 @@ RIAPP.Application._coreModules.dataform = function (app) {
             _getParentDataForm:function (el) {
                 if (!el)
                     return null;
-                var parent = el.parentNode, document = global.document, attr, opts;
+                var parent = el.parentElement, document = global.document, attr, opts;
                 if (!!parent) {
                     if (parent === this._el)
                         return this._el;
                     if (parent === document)
                         return null;
-
                     attr = parent.getAttribute(consts.DATA_ATTR.DATA_VIEW);
                     if (!attr) {
                         return this._getParentDataForm(parent);
@@ -13221,15 +13261,13 @@ RIAPP.Application._coreModules.dataform = function (app) {
                 }
             },
             _unbindDS:function () {
-                var dataContext = this._dataContext;
+                var dataContext = this._dataContext, coll = this._collection;
                 this.validationErrors = null;
-                if (!dataContext)
-                    return;
-                if (dataContext._isNotDestroyed()) {
+                if (!!dataContext  && !dataContext._isDestroyCalled) {
                     dataContext.removeNSHandlers(this._objId);
                 }
-                if (!!this._collection && this._collection._isNotDestroyed()) {
-                    this._collection.removeNSHandlers(this._objId);
+                if (!!coll && !coll._isDestroyCalled) {
+                    coll.removeNSHandlers(this._objId);
                 }
             },
             _clearContent:function () {
@@ -13253,7 +13291,7 @@ RIAPP.Application._coreModules.dataform = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                this._isDestroying = true;
+                
                 this._clearContent();
                 if (!!this._css) {
                     this._$el.removeClass(this._css);
@@ -13264,12 +13302,11 @@ RIAPP.Application._coreModules.dataform = function (app) {
                 this._unbindDS();
                 var parentDataForm = this._parentDataForm;
                 this._parentDataForm = null;
-                if (!!parentDataForm && parentDataForm._isNotDestroyed()) {
+                if (!!parentDataForm && !parentDataForm._isDestroyCalled) {
                     parentDataForm.removeNSHandlers(this._objId);
                 }
                 this._dataContext = null;
                 this._contentCreated = false;
-                this._owner = null;
                 this._super();
             },
             toString:function () {
@@ -13396,6 +13433,32 @@ RIAPP.Application._coreModules.elview = function (app) {
     var BaseElView = baseElViewMod.BaseElView, _css = baseElViewMod.css;
 
     thisModule.BaseElView = BaseElView;
+
+    var DebuggerElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._someProp = null;
+            }
+        },
+        {
+            someProp:{
+                set:function (v) {
+                    if (v !== this._someProp) {
+                        debugger;
+                        this._someProp = v;
+                        this.raisePropertyChanged('someProp');
+                        this.$el.html(''+this._someProp);
+                    }
+                },
+                get:function () {
+                    return this._someProp;
+                }
+            }
+        }, function (obj) {
+            thisModule.DebuggerElView = obj;
+            app.registerType('DebuggerElView',obj);
+            app.registerElView('debugger', obj);
+        });
 
     var EditableElView = BaseElView.extend(null,
         {
@@ -13666,7 +13729,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                 var groupName = this.el.getAttribute('name');
                 if (!groupName)
                     return;
-                var parent = this.el.parentNode;
+                var parent = this.el.parentElement;
                 if (!parent)
                     return;
                 var self = this, cur = self.el;
@@ -13763,9 +13826,11 @@ RIAPP.Application._coreModules.elview = function (app) {
                 this._super();
             },
             invokeCommand:function () {
-                var self = this;
-                if (!!self.command && self.command.canExecute(self, self.commandParam)) {
-                    self.command.execute(self, self.commandParam);
+                var self = this, command = self.command, param = self.commandParam;
+                if (!!command && command.canExecute(self, param)) {
+                    setTimeout(function(){
+                        command.execute(self, param);
+                    },0);
                 }
             },
             _onCommandChanged:function () {
@@ -13860,24 +13925,30 @@ RIAPP.Application._coreModules.elview = function (app) {
             },
             updateTemplate: function(name){
                 var self = this;
-                if (!name){
-                    if (!!this._template){
-                        this._template.destroy();
-                        this._template = null;
-                        self._templateChanged();
+                try
+                {
+                    if (!name){
+                        if (!!this._template){
+                            this._template.destroy();
+                            this._template = null;
+                            self._templateChanged();
+                        }
+                        return;
                     }
-                    return;
-                }
-                if (!this._template){
-                    this._template = this._app.getType('Template').create(name);
-                    this._template.dataContext = this._dataContext;
-                    this._template.addOnPropertyChange('templateID',function(s,a){
+                    if (!this._template){
+                        this._template = this._app.getType('Template').create(name);
+                        this._template.dataContext = this._dataContext;
+                        this._template.addOnPropertyChange('templateID',function(s,a){
+                            self._templateChanged();
+                        },this._objId);
                         self._templateChanged();
-                    },this._objId);
-                    self._templateChanged();
-                    return;
+                        return;
+                    }
+                    this._template.templateID = name;
+                }catch(ex){
+                   this._onError(ex,this);
+                   global._throwDummy(ex);
                 }
-                this._template.templateID = name;
             },
             destroy:function () {
                 if (!!this._template){
@@ -14504,7 +14575,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                     var self = this;
                     if (this._dataSource !== v) {
                         this._dataSource = v;
-                        if (!!this._grid && this._grid._isNotDestroyed()) {
+                        if (!!this._grid && !this._grid._isDestroyCalled) {
                             this._grid.destroy();
                             this._grid = null;
                         }
@@ -14553,7 +14624,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                 this._options = options;
             },
             destroy:function () {
-                if (!!this._pager && this._pager._isNotDestroyed()) {
+                if (!!this._pager && !this._pager._isDestroyCalled) {
                     this._pager.destroy();
                 }
                 this._pager = null;
@@ -14606,7 +14677,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                 this._options = options;
             },
             destroy:function () {
-                if (!!this._panel && this._panel._isNotDestroyed()) {
+                if (!!this._panel && !this._panel._isDestroyCalled) {
                     this._panel.destroy();
                 }
                 this._panel = null;
@@ -14659,7 +14730,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                 this._options = options;
             },
             destroy:function () {
-                if (!!this._listBox && this._listBox._isNotDestroyed()) {
+                if (!!this._listBox && !this._listBox._isDestroyCalled) {
                     this._listBox.destroy();
                 }
                 this._listBox = null;
@@ -14778,7 +14849,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                 }
             },
             destroy:function () {
-                if (!!this._form && this._form._isNotDestroyed()) {
+                if (!!this._form && !this._form._isDestroyCalled) {
                     this._form.destroy();
                 }
                 this._form = null;
@@ -14985,7 +15056,6 @@ RIAPP.Application._coreModules.content = function (app) {
         destroy:function () {
             if (this._isDestroyed)
                 return;
-            this._isDestroying = true;
             if (!!this._lfScope) {
                 this._lfScope.destroy();
                 this._lfScope = null;
@@ -15309,8 +15379,6 @@ RIAPP.Application._coreModules.content = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                //LookupContent._cnt-=1;
-                this._isDestroying = true;
                 this._cleanUp();
                 if (!!this._listBox && !this._isListBoxCachedExternally) {
                     this._listBox.destroy();

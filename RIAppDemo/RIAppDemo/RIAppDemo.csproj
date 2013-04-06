@@ -115,6 +115,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\MasterDetailDemo.cs" />
+    <Compile Include="Models\SPATemplate.cs" />
     <Compile Include="Models\UploadedFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\JsonDataContractResult.cs" />
@@ -208,6 +209,7 @@
     <Content Include="Scripts\RIAppDemo\header.js" />
     <Content Include="Scripts\RIAppDemo\manyToManyDemo.js" />
     <Content Include="Scripts\RIAppDemo\masterDetailDemo.js" />
+    <Content Include="Scripts\RIAppDemo\spaDemo.js" />
     <Content Include="Templates\sizeDisplayTemplate.html" />
     <Content Include="Templates\productEditTemplate.html" />
     <Content Include="Web.config">
@@ -275,6 +277,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Templates\DataGridDemo.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Templates\SPADemoTemplate.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Demo\SPADemo.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

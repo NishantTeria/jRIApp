@@ -17,5 +17,10 @@ namespace RIAppDemo.Controllers
         {
             return View(name);
         }
+
+        public ActionResult SPADemoTemplate()
+        {
+            return View(new RIAppDemo.Models.SPATemplate());
+        }
     }
 }

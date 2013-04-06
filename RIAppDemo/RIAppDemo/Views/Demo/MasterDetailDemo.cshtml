@@ -22,38 +22,80 @@
     <script src="@Url.Content("~/Scripts/RIAppDemo/masterDetailDemo.js",true)" type="text/javascript"></script>
 }
 <style type="text/css">
-#demoHeader label
-{
-    color: Blue;
-}
+    .space {
+        width:10px;
+        display:inline-block;
+    }
 
-#demoContent
-{
-    overflow:visible; 
-    height:600px;
-    vertical-align:top;
-}
+    #demoHeader label {
+        color: Blue;
+    }
 
-.customerTableWrap {height:100%; width:100%}
-.custInfo {color: Blue;}
-.custEdit {}
-.listbox-edit select {width:75%;}
-.qtyEdit > input[type="text"] { min-width: 20px; width:45px;}
+    #demoContent {
+        overflow: visible;
+        height: 600px;
+        vertical-align: top;
+    }
 
-form.customerInfo {width:100%; padding: 15px;}
+    .customerTableWrap {
+        height: 100%;
+        width: 100%;
+    }
 
-.orderDetailTableWrap {max-height:300px; width:100%}
+    .custInfo {
+        color: Blue;
+    }
 
-div.ria-dataform .addressLine {margin-bottom:2px; margin-top:2px; }
-div.ria-dataform .addressLabel { display: inline-block; width: 9em; color: Blue;}
-div.ria-dataform .address {  }
+    .custEdit {
+    }
 
-.autocompleteTableWrap {max-height:150px; width:100%; margin:0px; padding:0px;}
-.autocompleteTableHeader {display: none;}
+    .listbox-edit select {
+        width: 75%;
+    }
 
-table.ria-data-table tr:nth-child(even) {
-    background-color: #ECF2F6;
-}
+    .qtyEdit > input[type="text"] {
+        min-width: 20px;
+        width: 45px;
+    }
+
+    form.customerInfo {
+        width: 100%;
+        padding: 15px;
+    }
+
+    .orderDetailTableWrap {
+        max-height: 300px;
+        width: 100%;
+    }
+
+    div.ria-dataform .addressLine {
+        margin-bottom: 2px;
+        margin-top: 2px;
+    }
+
+    div.ria-dataform .addressLabel {
+        display: inline-block;
+        width: 9em;
+        color: Blue;
+    }
+
+    div.ria-dataform .address {
+    }
+
+    .autocompleteTableWrap {
+        max-height: 150px;
+        width: 100%;
+        margin: 0px;
+        padding: 0px;
+    }
+
+    .autocompleteTableHeader {
+        display: none;
+    }
+
+    table.ria-data-table tr:nth-child(even) {
+        background-color: #ECF2F6;
+    }
 </style>
 
 <script type="text/javascript">
@@ -117,33 +159,33 @@ table.ria-data-table tr:nth-child(even) {
 <h2  style="display:inline-block;">@ViewBag.Title</h2>
 
 <div id="demoContent" data-bind="{this.isBusy,to=dbContext.isBusy}" data-view="name=busy_indicator">
-    <div style="height:85%; vertical-align:top;">
-    <table data-app='default' data-name="gridCustomers" data-bind="@Model.BindGridCustomers"  data-view="@Model.OptionsGridCustomers">
-         <thead>
-        <tr>
-            <th data-column="width:35px,type:row_expander"/>
-            <th data-column="width:50px,type:row_actions"/>
-            <th data-column="width:90%,sortable:true,title:Title" data-content="fieldName:Title"/>
-            <th data-column="width:90%,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name"/>
-            <th data-column="width:90%,sortable:true,title:CompanyName" data-content="fieldName:CompanyName"/>
-            <th data-column="width:90%,sortable:true,title:SalesPerson" data-content="fieldName:SalesPerson"/>
-        </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <div style="height: 85%; vertical-align: top;">
+        <table data-app='default' data-name="gridCustomers" data-bind="@Model.BindGridCustomers"  data-view="@Model.OptionsGridCustomers">
+            <thead>
+                <tr>
+                    <th data-column="width:35px,type:row_expander" />
+                    <th data-column="width:50px,type:row_actions" />
+                    <th data-column="width:40px,sortable:true,title:Title" data-content="fieldName:Title" />
+                    <th data-column="width:150px,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name" />
+                    <th data-column="width:50%,sortable:true,title:CompanyName" data-content="fieldName:CompanyName" />
+                    <th data-column="width:150px,sortable:true,title:SalesPerson" data-content="fieldName:SalesPerson" />
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
-     <div style="margin-top:40px;text-align:left; border:none;width:100%;height:15%;">
+    <div style="margin-top: 40px; text-align: left; border: none; width: 100%; height: 15%;">
         <!--pager-->
-        <div style="float:left;" data-bind="{this.dataSource,to=dbSet,source=VM.customerVM}" data-view="name=pager,options={sliderSize:20}"></div>
-        <div style="float:left; padding-left:10px;padding-top:10px;"><span>Total:</span>&nbsp;<span data-bind="{this.value,to=dbSet.totalCount,source=VM.customerVM}"></span></div>
+        <div style="float: left;" data-bind="{this.dataSource,to=dbSet,source=VM.customerVM}" data-view="name=pager,options={sliderSize:20}"></div>
+        <div style="float: left; padding-left: 10px; padding-top: 10px;"><span>Total:</span>&nbsp;<span data-bind="{this.value,to=dbSet.totalCount,source=VM.customerVM}"></span></div>
 
-         <div style="float:right;" >
-        <button class="btn btn-info btn-small" data-bind="{this.command,to=addNewCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-plus"></i>&nbsp;New Customer</button>
-        <button class="btn btn-info btn-small" data-bind="{this.command,to=saveCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-ok-circle"></i>&nbsp;Save changes</button>
-        <button class="btn btn-info btn-small" data-bind="{this.command,to=undoCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-remove"></i>&nbsp;Undo changes</button>
-         </div>
-     </div>
- </div>
+        <div style="float: right;">
+            <button class="btn btn-info btn-small" data-bind="{this.command,to=addNewCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-plus"></i>&nbsp;New Customer</button>
+            <button class="btn btn-info btn-small" data-bind="{this.command,to=saveCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-ok-circle"></i>&nbsp;Save changes</button>
+            <button class="btn btn-info btn-small" data-bind="{this.command,to=undoCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-remove"></i>&nbsp;Undo changes</button>
+        </div>
+    </div>
+</div>
  
 @section RiaTemplates
 {
@@ -249,6 +291,7 @@ table.ria-data-table tr:nth-child(even) {
             </table>
         </div>
     </div>
+
     @*Grid details template for customer's orders*@
     <div id="customerDetailsTemplate" data-role="template">
         <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM"
@@ -332,6 +375,7 @@ table.ria-data-table tr:nth-child(even) {
             </div>
         </div>
     </div>
+
     <div id="orderEditTemplate" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
@@ -475,6 +519,7 @@ table.ria-data-table tr:nth-child(even) {
             </table>
         </div>
     </div>
+
     <div id="orderDetEditTemplate" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
@@ -536,6 +581,7 @@ table.ria-data-table tr:nth-child(even) {
             </table>
         </div>
     </div>
+
     @*Grid details template for order Details*@
     <div id="orderDetailsTemplate" data-role="template">
         <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM.ordersVM"  data-view="name='tabs'">
@@ -630,43 +676,44 @@ table.ria-data-table tr:nth-child(even) {
             </div>
         </div>
     </div>
+
     <div id="productTemplate1" data-role="template">
         <span data-bind="{this.value,to=Product.Name}"></span>
     </div>
+
     <div id="productTemplate2" data-role="template">
         autocomplete here-->
         <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.dataContext}"
-            data-view="name=productACV,options={fieldName:Name,dbSetName:LookUpProduct,queryName:ReadProductLookUp,templateId:autocompleteTemplate}" />&nbsp;<b>*</b>
+            data-view="name=productACV,options={fieldName:Name,dbSetName:LookUpProduct,queryName:ReadProductLookUp,templateId:prodAutocompleteTemplate}" />&nbsp;<b>*</b>
     </div>
+
     @*example of autocomplete implementation*@
-    <div id="autocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden;
-    background-color: White; border: 1px solid gray;">
-    <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px;
-        vertical-align: top;" data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">
-        <table style="position: relative" data-name="lookupGrid" data-bind="{this.dataSource,to=dbSet}"
-            data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
-            <thead>
-                <tr>
-                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:Name" />
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-    <div style="position: relative; text-align: left;">
-        <!--pager-->
-        <div style="float: left;" data-bind="{this.dataSource,to=dbSet}" data-view="name=pager,options={sliderSize:4,hideOnSinglePage=true}">
+    <div id="prodAutocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden; background-color: White; border: 1px solid gray;">
+        <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px; vertical-align: top;"
+            data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">
+            <table style="position: relative" data-name="lookupGrid" data-bind="{this.dataSource,to=dbSet}"
+                data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
+                <thead>
+                    <tr>
+                        <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:Name" />
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
         </div>
-        <div style="float: left; padding-left: 10px; padding-top: 10px;">
-            <span>Total:</span>&nbsp;<span data-bind="{this.value,to=dbSet.totalCount}"></span></div>
-    </div>
-    <br style="clear: left" />
-    <div style="position: relative; text-align: center; margin-top: 4px; margin-bottom: 4px;">
-        <a class="btn btn-info btn-small" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}">
-            <i class="icon-ok"></i></a><a class="btn btn-info btn-small" data-name="btnCancel"
-                data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove">
-            </i></a>
-    </div>
+        <div style="position: relative; text-align: left;">
+            <!--pager-->
+            <div style="float: left;" data-bind="{this.dataSource,to=dbSet}" data-view="name=pager,options={sliderSize:4,hideOnSinglePage=true}">
+            </div>
+            <div style="float: left; padding-left: 10px; padding-top: 10px;">
+                <span>Total:</span>&nbsp;<span data-bind="{this.value,to=dbSet.totalCount}"></span>
+            </div>
+        </div>
+        <br style="clear: left" />
+        <div style="position: relative; text-align: center; margin-top: 4px; margin-bottom: 4px;">
+            <a class="btn btn-info btn-small" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}"><i class="icon-ok"></i></a><span class="space"></span>
+            <a class="btn btn-info btn-small" data-name="btnCancel" data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove"></i></a>
+        </div>
     </div>
 }

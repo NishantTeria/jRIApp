@@ -411,7 +411,7 @@ RIAPP.Application.registerModule('manyToManyDemo', function (app) {
                 var dialogOptions = {
                     templateID:'addAddressTemplate',
                     width: 950,
-                    height: 680,
+                    height: 600,
                     title:'add new customer address',
                     submitOnOK: true,
                     fn_OnClose: function(dialog){

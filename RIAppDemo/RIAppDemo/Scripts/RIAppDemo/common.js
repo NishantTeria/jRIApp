@@ -258,7 +258,8 @@ RIAPP.Application.registerModule('common', function (app) {
                         dialog.title = self.title;
                     },
                     fn_OnClose: function(dialog){
-                       self.error = null;
+                       self._error = null;
+                       self.raisePropertyChanged('error');
                     }
                 };
                 //dialogs are distinguished by their given names
@@ -280,10 +281,12 @@ RIAPP.Application.registerModule('common', function (app) {
             error:{
                 set:function (v) {
                     var old = this._error;
-                    if (old !== v) {
-                        this._error = v;
-                        this.raisePropertyChanged('error');
+                    if (!!old) {
+                        global._onError(v,null);
+                        global._throwDummy(v);
                     }
+                    this._error = v;
+                    this.raisePropertyChanged('error');
                 },
                 get:function () {
                     return this._error;

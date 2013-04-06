@@ -21,75 +21,164 @@
     <script src="@Url.Content("~/Scripts/RIAppDemo/manyToManyDemo.js",true)" type="text/javascript"></script>
 }
 <style type="text/css">
-#demoHeader label
-{
-    color: Blue;
-}
+    .space {
+        width: 10px;
+        display: inline-block;
+    }
 
-#demoContent
-{
-    overflow:visible; 
-    height:760px;
-    vertical-align:top;
-    position:relative;
-}
+    #demoHeader label {
+        color: Blue;
+    }
 
-#leftPanel
-{
-    overflow:auto; 
-    overflow-y: hidden;    
-    height:95%;
-    vertical-align:top;
-    display: inline-block;
-    width:20%;
-}
+    #demoContent {
+        overflow: visible;
+        height: 760px;
+        vertical-align: top;
+        position: relative;
+    }
 
-#rightPanel
-{
-    overflow:auto; 
-    height:95%;
-    vertical-align:top;
-    display: inline-block;
-    width: 79%;
-}
+    #leftPanel {
+        overflow: auto;
+        overflow-y: hidden;
+        height: 95%;
+        vertical-align: top;
+        display: inline-block;
+        width: 20%;
+    }
 
-.customerTableWrap {height:97%; width:100%}
-.addressTableWrap {height:200px; width:100%}
-.addressTableHeader {}
+    #rightPanel {
+        overflow: auto;
+        height: 95%;
+        vertical-align: top;
+        display: inline-block;
+        width: 79%;
+    }
 
-.autocompleteTableWrap {max-height:150px; width:100%;}
-.autocompleteTableHeader {display: none;}
+    .customerTableWrap {
+        height: 97%;
+        width: 100%;
+    }
 
-.findAddrTableWrap {height:95%; width:100%;}
+    .addressTableWrap {
+        height: 200px;
+        width: 100%;
+    }
 
-#customerInfo { padding:2px; margin: 2px; width: 98%;}
-#customerInfo fieldset {border-radius: 5px;}
-#customerInfo fieldset legend {color:Blue; font-weight:bold;}
-.custInfo {color: Blue;}
-.custEdit {}
+    .addressTableHeader {
+    }
 
-#customerAddr { padding:2px; margin: 2px; width: 98%;}
-#customerAddr fieldset {border-radius: 5px;}
-#customerAddr fieldset legend {color:Blue; font-weight:bold;}
-table.ria-data-table tr .addressTemplate {padding:5px; height:195px;}
-table.ria-data-table tr.row-highlight .addressTemplate {}
-table.ria-data-table tr .addressTemplate input[type="text"] { max-width: 200px;}
+    .autocompleteTableWrap {
+        max-height: 150px;
+        width: 100%;
+    }
 
-table.ria-data-table tr .addressLine {margin-bottom:2px; margin-top:2px; }
-table.ria-data-table tr .addressLabel { display: inline-block; width: 9em;}
-table.ria-data-table tr .address {color:Blue; }
-table.ria-data-table tr.row-highlight .address {color:Aqua; }
-#leftPanel table.ria-data-table tr:nth-child(even) {
-    background-color: #ECF2F6;
-}
+    .autocompleteTableHeader {
+        display: none;
+    }
 
-div.ria-dataform .addressLine {margin-bottom:2px; margin-top:2px; }
-div.ria-dataform .addressLabel { display: block; width: 9em; color: Blue;}
-div.ria-dataform .address { width: 60%; }
+    .findAddrTableWrap {
+        height: 95%;
+        width: 100%;
+    }
 
-.stackPanelItem { width:170px;}
-.stackPanelItem fieldset {border-radius: 5px;}
-.stackPanelItem fieldset legend {color:Blue; font-weight:bold;}
+    #customerInfo {
+        padding: 2px;
+        margin: 2px;
+        width: 98%;
+    }
+
+    #customerInfo fieldset {
+       border-radius: 5px;
+    }
+
+    #customerInfo fieldset legend {
+        color: Blue;
+        font-weight: bold;
+    }
+
+    .custInfo {
+        color: Blue;
+    }
+
+    .custEdit {
+    }
+
+    #customerAddr {
+        padding: 2px;
+        margin: 2px;
+        width: 98%;
+    }
+
+    #customerAddr fieldset {
+        border-radius: 5px;
+    }
+
+    #customerAddr fieldset legend {
+        color: Blue;
+        font-weight: bold;
+    }
+
+    table.ria-data-table tr .addressTemplate {
+        padding: 5px;
+        height: 195px;
+    }
+
+    table.ria-data-table tr.row-highlight .addressTemplate {
+    }
+
+    table.ria-data-table tr .addressTemplate input[type="text"] {
+        max-width: 200px;
+    }
+
+    table.ria-data-table tr .addressLine {
+        margin-bottom: 2px;
+        margin-top: 2px;
+    }
+
+    table.ria-data-table tr .addressLabel {
+        display: inline-block;
+        width: 9em;
+    }
+
+    table.ria-data-table tr .address {
+        color: Blue;
+    }
+
+    table.ria-data-table tr.row-highlight .address {
+        color: Aqua;
+    }
+
+    #leftPanel table.ria-data-table tr:nth-child(even) {
+        background-color: #ECF2F6;
+    }
+
+    div.ria-dataform .addressLine {
+        margin-bottom: 2px;
+        margin-top: 2px;
+    }
+
+    div.ria-dataform .addressLabel {
+        display: block;
+        width: 9em;
+        color: Blue;
+    }
+
+    div.ria-dataform .address {
+        width: 60%;
+    }
+
+    .stackPanelItem {
+        width: 170px;
+    }
+
+    .stackPanelItem fieldset {
+        border-radius: 5px;
+    }
+
+    .stackPanelItem fieldset legend {
+        color: Blue;
+        font-weight: bold;
+    }
 </style>
 
 
@@ -156,79 +245,112 @@ div.ria-dataform .address { width: 60%; }
 
 <div id="demoContent" data-bind="{this.isBusy,to=dbContext.isBusy}" data-view="name=busy_indicator">
     <div id="leftPanel">
-    <div style="height:97%; vertical-align:top;">
-    <table data-app='default' data-name="gridCustomers" data-bind="{this.dataSource,to=dbSet,source=VM.customerVM}" data-view="options={wrapCss:customerTableWrap,isHandleAddNew:true,editor:{templateID:customerEditTemplate,width:550,height:650,submitOnOK:true,title:'Customer editing'}}">
-        <thead>
-        <tr>
-            <th data-column="width:50px,type:row_actions"/>
-            <th data-column="width:90%,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name"/>
-        </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    </div>
-     </div>
-
-     <div id="rightPanel">
-         <div id="customerInfo" data-bind="{this.dataContext,to=currentItem,source=VM.customerVM}" data-view="name=dataform">    
-          <fieldset>
-           <legend>Customer Info</legend>
-           <table style="width:95%; border:none; table-layout:fixed; background-color:transparent;">
-            <colgroup>
-                <col style="width:125px;border:none;text-align:left;" />
-                <col style="width:100%;border:none; text-align:left;" />
-            </colgroup>
-            <tbody>
-            <tr><td>ID:</td><td><span data-content="fieldName:CustomerID,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>Title:</td><td><span data-content="fieldName:Title,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>FirstName:</td><td><span data-content="fieldName:FirstName,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>MiddleName:</td><td><span data-content="fieldName:MiddleName,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>LastName:</td><td><span data-content="fieldName:LastName,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>Suffix:</td><td><span data-content="fieldName:Suffix,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>CompanyName:</td><td><span data-content="fieldName:CompanyName,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>SalesPerson:</td><td><span data-content="template={displayID=salespersonTemplate1},css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>Email:</td><td><span data-content="fieldName=EmailAddress,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            <tr><td>Phone:</td><td><span data-content="fieldName:Phone,readOnly:true,css:{displayCss:'custInfo'}"></span></td></tr>
-            </tbody>
-          </table>
-           <button class="btn btn-info btn-small" style="float:right;margin:5px;" data-bind="{this.command,to=addNewCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-plus"></i>&nbsp;New Customer</button>
-          </fieldset>
-         </div><!--customerDetails-->
-         <div id="customerAddr">
-           <fieldset>
-           <legend>Customer Addresses</legend>
-             <table data-app='default' data-name="gridCustAddr" data-bind="{this.dataSource,to=custAdressView,source=VM.customerVM.customerAddressVM}" data-view="options={wrapCss:addressTableWrap,headerCss:addressTableHeader}">
+        <div style="height: 97%; vertical-align: top;">
+            <table data-app='default' data-name="gridCustomers" data-bind="{this.dataSource,to=dbSet,source=VM.customerVM}" data-view="options={wrapCss:customerTableWrap,isHandleAddNew:true,editor:{templateID:customerEditTemplate,width:550,height:650,submitOnOK:true,title:'Customer editing'}}">
                 <thead>
-                <tr>
-                <!--we can use one column with templated data content or several ordinary columns-->
-                <!--
-                    <th data-column="width:100%,title=Address,sortable:true,sortMemberName=AddressLine" data-content="template={displayID:addressTemplate, editID:addressTemplate}"/>
-                -->
-                   <th data-column="width:10%,title=Type,sortable:true,sortMemberName=AddressType;AddressLine" data-content="fieldName:AddressType"/>
-                   <th data-column="width:20%,title=Address1,sortable:true" data-content="fieldName:Address.AddressLine1"/>
-                   <th data-column="width:20%,title=Address2,sortable:true" data-content="fieldName:Address.AddressLine2"/>
-                   <th data-column="width:15%,title=City,sortable:true,sortMemberName=Address.City;Address.AddressLine1" data-content="fieldName:Address.City"/>
-                   <th data-column="width:15%,title=State,sortable:true,sortMemberName=Address.StateProvince;Address.AddressLine1" data-content="fieldName:Address.StateProvince"/>
-                   <th data-column="width:10%,title=Region,sortable:false" data-content="fieldName:Address.CountryRegion"/>
-                   <th data-column="width:10%,title=Zip,sortable:false" data-content="fieldName:Address.PostalCode"/>
-                </tr>
+                    <tr>
+                        <th data-column="width:50px,type:row_actions" />
+                        <th data-column="width:90%,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name" />
+                    </tr>
                 </thead>
                 <tbody></tbody>
             </table>
-            <button class="btn btn-info btn-small" style="float:right;margin:5px;" data-bind="{this.command,to=addNewCommand,source=VM.customerVM.customerAddressVM.addAddressVM}">Manage Addresses</button> 
+        </div>
+    </div>
+
+    <div id="rightPanel">
+        <div id="customerInfo" data-bind="{this.dataContext,to=currentItem,source=VM.customerVM}" data-view="name=dataform">
+            <fieldset>
+                <legend>Customer Info</legend>
+                <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
+                    <colgroup>
+                        <col style="width: 125px; border: none; text-align: left;" />
+                        <col style="width: 100%; border: none; text-align: left;" />
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <td>ID:</td>
+                            <td><span data-content="fieldName:CustomerID,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Title:</td>
+                            <td><span data-content="fieldName:Title,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>FirstName:</td>
+                            <td><span data-content="fieldName:FirstName,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>MiddleName:</td>
+                            <td><span data-content="fieldName:MiddleName,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>LastName:</td>
+                            <td><span data-content="fieldName:LastName,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Suffix:</td>
+                            <td><span data-content="fieldName:Suffix,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>CompanyName:</td>
+                            <td><span data-content="fieldName:CompanyName,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>SalesPerson:</td>
+                            <td><span data-content="template={displayID=salespersonTemplate1},css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Email:</td>
+                            <td><span data-content="fieldName=EmailAddress,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Phone:</td>
+                            <td><span data-content="fieldName:Phone,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-info btn-small" style="float: right; margin: 5px;" data-bind="{this.command,to=addNewCommand,mode=OneWay,source=VM.customerVM}"><i class="icon-plus"></i>&nbsp;New Customer</button>
             </fieldset>
-         </div><!--customerAddr-->
-         <!--
+        </div>
+        <!--customerDetails-->
+        <div id="customerAddr">
+            <fieldset>
+                <legend>Customer Addresses</legend>
+                <table data-app='default' data-name="gridCustAddr" data-bind="{this.dataSource,to=custAdressView,source=VM.customerVM.customerAddressVM}" data-view="options={wrapCss:addressTableWrap,headerCss:addressTableHeader}">
+                    <thead>
+                        <tr>
+                            <!--we can use one column with templated data content or several ordinary columns-->
+                            <!--
+                    <th data-column="width:100%,title=Address,sortable:true,sortMemberName=AddressLine" data-content="template={displayID:addressTemplate, editID:addressTemplate}"/>
+                -->
+                            <th data-column="width:10%,title=Type,sortable:true,sortMemberName=AddressType;AddressLine" data-content="fieldName:AddressType" />
+                            <th data-column="width:20%,title=Address1,sortable:true" data-content="fieldName:Address.AddressLine1" />
+                            <th data-column="width:20%,title=Address2,sortable:true" data-content="fieldName:Address.AddressLine2" />
+                            <th data-column="width:15%,title=City,sortable:true,sortMemberName=Address.City;Address.AddressLine1" data-content="fieldName:Address.City" />
+                            <th data-column="width:15%,title=State,sortable:true,sortMemberName=Address.StateProvince;Address.AddressLine1" data-content="fieldName:Address.StateProvince" />
+                            <th data-column="width:10%,title=Region,sortable:false" data-content="fieldName:Address.CountryRegion" />
+                            <th data-column="width:10%,title=Zip,sortable:false" data-content="fieldName:Address.PostalCode" />
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn btn-info btn-small" style="float: right; margin: 5px;" data-bind="{this.command,to=addNewCommand,source=VM.customerVM.customerAddressVM.addAddressVM}">Manage Addresses</button>
+            </fieldset>
+        </div>
+        <!--customerAddr-->
+        <!--
            //example of using stackpanel for horizontal list view
            <div style="width:100%; overflow:auto;" data-bind="{this.dataSource,to=custAdressView,source=VM.customerVM.custAddrVM}" data-view="name=stackpanel,options:{templateID:stackPanelItemTemplate,orientation:horizontal}"></div>
          -->
-     </div><!--right panel-->
+    </div>
+    <!--right panel-->
 
-     <div style="margin-top:0px;text-align:left; border:none;width:100%;height:40px;">
+    <div style="margin-top: 0px; text-align: left; border: none; width: 100%; height: 40px;">
         <!--pager-->
-        <div style="float:left;" data-bind="{this.dataSource,to=dbSet,source=VM.customerVM}" data-view="name=pager,options={sliderSize:10,hideOnSinglePage=false}"></div>
-        <div style="float:left; padding-left:10px;padding-top:10px;"><span>Total:</span>&nbsp;<span data-bind="{this.value,to=totalCount,source=VM.customerVM.dbSet}"></span></div>
-     </div>
+        <div style="float: left;" data-bind="{this.dataSource,to=dbSet,source=VM.customerVM}" data-view="name=pager,options={sliderSize:10,hideOnSinglePage=false}"></div>
+        <div style="float: left; padding-left: 10px; padding-top: 10px;"><span>Total:</span>&nbsp;<span data-bind="{this.value,to=totalCount,source=VM.customerVM.dbSet}"></span></div>
+    </div>
  </div>
 
 @section RiaTemplates
@@ -335,16 +457,19 @@ div.ria-dataform .address { width: 60%; }
         </table>
         </form>
     </div>
+
     <div id="salespersonTemplate1" data-role="template">
         <span data-bind="{this.value,to=SalesPerson}"></span>
     </div>
+
     <div id="salespersonTemplate2" data-role="template">
         <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.value,to=SalesPerson,mode=TwoWay}{this.dataContext}"
-            data-view="name=autocomplete,options={fieldName:SalesPerson,dbSetName:SalesInfo,queryName:ReadSalesInfo,templateId:autocompleteTemplate}" />
+            data-view="name=autocomplete,options={fieldName:SalesPerson,dbSetName:SalesInfo,queryName:ReadSalesInfo,templateId:salePerAutocompleteTemplate}" />
         &nbsp;<span style="color: Gray;">&lt;--autocomplete here</span>
     </div>
+
     @*example of autocomplete implementation*@
-    <div id="autocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden;
+    <div id="salePerAutocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden;
         background-color: White; border: 1px solid gray;">
         <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px;
             width: 200px; vertical-align: top;" data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">
@@ -368,12 +493,11 @@ div.ria-dataform .address { width: 60%; }
         </div>
         <br style="clear: left" />
         <div style="position: relative; text-align: center; margin-top: 4px; margin-bottom: 4px;">
-            <a class="btn btn-info btn-small" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}">
-                <i class="icon-ok"></i></a><a class="btn btn-info btn-small" data-name="btnCancel"
-                    data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove">
-                    </i></a>
+            <a class="btn btn-info btn-small" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}"><i class="icon-ok"></i></a><span class="space"></span>
+            <a class="btn btn-info btn-small" data-name="btnCancel" data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove"></i></a>
         </div>
     </div>
+
     @*used for display of customer's address on the right panel*@
     <div id="addressTemplate" data-role="template" class="addressTemplate">
         <fieldset>
@@ -413,6 +537,7 @@ div.ria-dataform .address { width: 60%; }
             </form>
         </fieldset>
     </div>
+
     <!--addressTemplate-->
     @*used for managing of customer's addresses in many to many relationship*@
     <div id="addAddressTemplate" data-role="template">
@@ -426,12 +551,12 @@ div.ria-dataform .address { width: 60%; }
                 <a class="btn btn-info btn-small" data-bind="{this.command,to=execSearchCommand}"><i
                     class="icon-search"></i></a>
             </div>
-            <div style="width: 100%; height: 450px;">
+            <div style="width: 100%; height: 420px;">
                 <table style="border: none; border-collapse: collapse; table-layout: fixed;">
                     <tr>
                         <!--left section - already linked to customer addresses -->
                         <td style="vertical-align: top;">
-                            <div style="vertical-align: top; width: 350px; height: 440px;">
+                            <div style="vertical-align: top; width: 350px; height: 310px;">
                                 <table data-app='default' data-name="gridCustAddr" data-bind="{this.dataSource,to=custAdressView,source=VM.customerVM.customerAddressVM}"
                                     data-view="options={wrapCss:findAddrTableWrap,isCanDelete=false,isCanEdit=true,isUseScrollInto=false}">
                                     <thead>
@@ -459,7 +584,7 @@ div.ria-dataform .address { width: 60%; }
                         </td>
                         <!--right section AddressInfos -->
                         <td style="vertical-align: top;">
-                            <div style="vertical-align: top; height: 440px;">
+                            <div style="vertical-align: top; height: 310px;">
                                 <table style="position: relative" data-bind="{this.dataSource,to=addressInfosView}{this.propChangedCommand,to=propChangeCommand}"
                                     data-view="options={wrapCss:findAddrTableWrap}">
                                     <thead>
@@ -530,6 +655,7 @@ div.ria-dataform .address { width: 60%; }
             </form>
         </div>
     </div>
+
     <div id="stackPanelItemTemplate" data-role="template" class="stackPanelItem" style="width: 200px;">
         <fieldset>
             <legend><span class="address" data-bind="{this.value,to=AddressType}"></span></legend>

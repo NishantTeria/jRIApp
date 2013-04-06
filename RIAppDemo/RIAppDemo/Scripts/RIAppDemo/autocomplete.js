@@ -115,6 +115,9 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 clearTimeout(this._loadTimeout);
                 if (!!text && text.length>1){
                     this._loadTimeout = setTimeout(function(){
+                        if (self._isDestroyCalled)
+                            return;
+
                         if (self._prevText != text){
                             self._prevText = text;
                             if (!self._isOpen)
@@ -195,6 +198,8 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 }
 
                 this._$template.slideUp('medium', function(){
+                    if (self._isDestroyCalled)
+                        return;
                     self._$template.css({visibility: "hidden", display: ""});
                 });
                 this._isOpen = false;

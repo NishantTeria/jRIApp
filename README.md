@@ -6,7 +6,8 @@ jRIApp
 You can watch video of the demo on <a href="http://youtu.be/CxWcC2O8u-k" target="_blank">YouTube</a>
 <br/>
 You can discuss the framework on <a href="https://groups.google.com/forum/#!forum/jriapp-framework" target="_blank">Google Groups</a>
-<p style="color:blue">the current version of the framework is updated to 1.2, see CHANGES.txt for details.</p>
+<p style="color:blue">the current version of the framework is updated to 1.2.1, see CHANGES.txt for details.</p>
+<p>The demo application now includes Single Page Application Demo page!</p>
 
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
 It consists of two parts – the client and the server parts. 
