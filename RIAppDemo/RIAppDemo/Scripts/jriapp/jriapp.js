@@ -8418,7 +8418,7 @@ RIAPP.Application._coreModules.db = function (app) {
                         if (!args.isCanceled && canFilter) {
                             isOk = self._fn_filter(item);
                             if (isOk) {
-                                self._appendItems([item]);
+                                self.appendItems([item]);
                             }
                         }
                     }
