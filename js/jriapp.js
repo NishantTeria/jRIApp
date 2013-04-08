@@ -134,7 +134,7 @@ RIAPP.utils = (function () {
 
 RIAPP.BaseObject = {
     _create:function _create() {
-        this.__callState = null;
+        this._super = null;
         this.__events = null;
         this._isDestroyed = false;
         this._isDestroyCalled = false;
@@ -147,7 +147,7 @@ RIAPP.BaseObject = {
     },
     extend:function extend(properties, propertyDescriptors, fn_afterExtend) {
         var pds = propertyDescriptors || {}, propertyName, simpleProperties, i = 0, len, obj;
-        var pdsProperties = Object.getOwnPropertyNames(pds);
+        var pdsProperties = Object.getOwnPropertyNames(pds), rx_super = /\._super\s*\(/;
         pdsProperties.forEach(function (name) {
             var pd = pds[name];
             if (pd['enumerable'] === undefined) {
@@ -176,34 +176,35 @@ RIAPP.BaseObject = {
         obj = Object.create(this, pds);
         var pnames = Object.getOwnPropertyNames(obj);
         pnames.forEach(function (name) {
-            var p = Object.getOwnPropertyDescriptor(obj, name), fn, fn_str;
+            var p = Object.getOwnPropertyDescriptor(obj, name), fn, fn_str, superProto;
             if (!!p.value && RIAPP.utils.isFunc(p.value)) {
                 fn_str = p.value.toString();
                 fn = obj[name];
                 //this wrapping of the original function is only for the functions which use _super function calls
-                if (fn_str.indexOf('._super(') > -1) {
+                if (rx_super.test(fn_str)) {
+                    superProto = Object.getPrototypeOf(obj);
                     if (name == 'destroy'){
                         p.value = function () {
-                            var old = this.__callState;
-                            this.__callState = {methodName:name, definedOn:obj};
+                            var old = this._super;
+                            this._super = superProto[name];
                             try {
                                 this._isDestroyCalled = true;
                                 return fn.apply(this, arguments);
                             }
                             finally {
-                                this.__callState = old;
+                                this._super = old;
                             }
                         };
                     }
                     else{
                         p.value = function () {
-                            var old = this.__callState;
-                            this.__callState = {methodName:name, definedOn:obj};
+                            var old = this._super;
+                            this._super = superProto[name];
                             try {
                                 return fn.apply(this, arguments);
                             }
                             finally {
-                                this.__callState = old;
+                                this._super = old;
                             }
                         };
                     }
@@ -226,18 +227,6 @@ RIAPP.BaseObject = {
         if (!!fn_afterExtend)
             fn_afterExtend(obj);
         return obj;
-    },
-    _super:function _super() {
-        if (!this.__callState)
-            throw new Error(RIAPP.ERRS.ERR_SUPER_INVALID);
-        var methodName = this.__callState.methodName;
-        var superProto = Object.getPrototypeOf(this.__callState.definedOn);
-        if (!superProto)
-            throw new Error(String.format(RIAPP.ERRS.ERR_ASSERTION_FAILED, 'superProto must not be undefined'));
-        var fn = superProto[methodName];
-        if (!fn)
-            throw new Error(String.format(RIAPP.ERRS.ERR_ASSERTION_FAILED, 'superProto[methodName] must be a Function'));
-        return fn.apply(this, arguments);
     },
     _addHandler:function (name, fn, namespace, prepend) {
         if (this._isDestroyed)
