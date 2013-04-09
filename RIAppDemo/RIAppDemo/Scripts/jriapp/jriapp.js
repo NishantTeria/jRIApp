@@ -3612,16 +3612,13 @@ RIAPP.Application._coreModules.template = function (app) {
                         if (asyncLoad) {
                             self._el.appendChild(tel);
                         }
-                        self._lfTime = self._app._bindTemplateElements(tel);
                         self._el = tel;
+                        self._lfTime = self._app._bindTemplateElements(self._el);
                         var telv = self._getTemplateElView();
                         if (!!telv) {
                             telv.templateLoaded(self);
                         }
-                        if (asyncLoad){
-                            self._updateBindingSource();
-                        }
-
+                        self._updateBindingSource();
                     },
                     function(arg){
                         if (self._isDestroyCalled)
@@ -3737,7 +3734,6 @@ RIAPP.Application._coreModules.template = function (app) {
                     this._templateID = v;
                     this._loadTemplate();
                     this.raisePropertyChanged('templateID');
-                    this._updateBindingSource();
                 }
             },
             get:function () {
@@ -13848,6 +13844,17 @@ RIAPP.Application._coreModules.elview = function (app) {
             }
         },
         {
+            isEnabled:{
+                set:function (v) {
+                    if (v !== this.isEnabled) {
+                        this._setIsEnabled(this.$el, v);
+                        this.raisePropertyChanged('isEnabled');
+                    }
+                },
+                get:function () {
+                    return this._getIsEnabled(this.$el);
+                }
+            },
             command:{
                 set:function (v) {
                     this._setCommand(v);
@@ -13874,26 +13881,57 @@ RIAPP.Application._coreModules.elview = function (app) {
         });
 
     var TemplateElView = CommandElView.extend({
+            _init: function(options){
+                this._super(options);
+                this._template = null;
+                this._isEnabled = true;
+            },
             templateLoaded:function (template) {
                 var self = this, p = self._commandParam;
+                self._template = template;
+                self._template.isDisabled = !self._isEnabled;
                 self._commandParam = {template:template, isLoaded:true};
                 self.invokeCommand();
                 self._commandParam = p;
+                this.raisePropertyChanged('template');
             },
             templateUnloading:function (template) {
                 var self = this, p = self._commandParam;
-                self._commandParam = {template:template, isLoaded:false};
-                self.invokeCommand();
-                self._commandParam = p;
-            },
-            _setCommand:function (v) {
-                this._super(v);
+                try
+                {
+                    self._commandParam = {template:template, isLoaded:false};
+                    self.invokeCommand();
+                }
+                finally{
+                    self._commandParam = p;
+                    self._template = null;
+                }
+                this.raisePropertyChanged('template');
             },
             toString:function () {
                 return 'TemplateElView';
             }
         },
         {
+            isEnabled:{
+                set:function (v) {
+                   if (this._isEnabled !== v){
+                       this._isEnabled = v;
+                       if (!!this._template){
+                           this._template.isDisabled = !this._isEnabled;
+                       }
+                       this.raisePropertyChanged('isEnabled');
+                   }
+                },
+                get:function () {
+                    return this._isEnabled;
+                }
+            },
+            template:{
+                get:function () {
+                    return this._template;
+                }
+            }
         }, function (obj) {
             thisModule.TemplateElView = obj;
             app.registerType('TemplateElView',obj);
@@ -14062,17 +14100,6 @@ RIAPP.Application._coreModules.elview = function (app) {
                         return '';
                     return this.$el.html();
                 }
-            },
-            isEnabled:{
-                set:function (v) {
-                    if (v !== this.isEnabled) {
-                        this._setIsEnabled(this.$el, v);
-                        this.raisePropertyChanged('isEnabled');
-                    }
-                },
-                get:function () {
-                    return this._getIsEnabled(this.$el);
-                }
             }
         }, function (obj) {
             thisModule.ButtonElView = obj;
@@ -14214,17 +14241,6 @@ RIAPP.Application._coreModules.elview = function (app) {
                     if (!this._el)
                         return '';
                     return this.$el.prop('href');
-                }
-            },
-            isEnabled:{
-                set:function (v) {
-                    if (v !== this.isEnabled) {
-                        this._setIsEnabled(this.$el, v);
-                        this.raisePropertyChanged('isEnabled');
-                    }
-                },
-                get:function () {
-                    return this._getIsEnabled(this.$el);
                 }
             }
         }, function (obj) {
