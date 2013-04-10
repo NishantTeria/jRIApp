@@ -156,11 +156,12 @@
 
         }; //end fn_Main
 
+    //here we load templates from the server in global scope - they will be available to every application's instance
+    RIAPP.global.loadTemplates('@Url.Action("Download", "Templates", new {name="DataGridDemo"})');
+
      //this handler is invoked when the document DOM structure is loaded - the same as using jQuery.ready
-     RIAPP.global.addHandler('load', function (sender, args) {
-           //we load templates from the server
-           RIAPP.global.loadTemplates('@Url.Action("Download", "Templates", new {name="DataGridDemo"})');
-           
+    RIAPP.global.addHandler('load', function (sender, args) {
+         
            //create application instance
            var app = RIAPP.Application.create({ app_name: 'default', //each application's name on the page must be unique
                 service_url: '@Url.RouteUrl("Default",new {controller="RIAppDemoService", action=""})',
@@ -199,18 +200,6 @@
 
 
 <h2  style="display:inline-block;">@ViewBag.Title</h2>
-@*
-<!--
-    this shows the use of new element view- dynacontent
-    it is used to display different template in one region just by switching its templateID property
-    it also has dataContext property to set datacontext to the template
-    these two properties are data bindable- we can bind them to our view model to change display dynamically  
-    P.S. - i will add new separate demo for this usefull feature
--->
-<div id="demoDynaContent" data-bind="{this.templateID,to=templateID,source=VM.productVM}" data-view="name=dynacontent">
-</div>
-*@
-
 <header id="title" style="width:99%; border:1px Solid LightBlue; padding:5px;margin-bottom:5px;-moz-border-radius: 4px;border-radius:4px;">
 <a href="#" id="expander" style="margin-left:2px;" data-bind="{this.command,to=expanderCommand,mode=OneWay,source=VM.headerVM}" data-view="name=expander"></a>
 <span style="margin-left:5px;">Filter</span>

@@ -101,24 +101,6 @@ RIAPP.utils = (function () {
                 i = close + 1;
             }
             return result;
-        },
-        cloneObj:function (o) {
-            if (!o || 'object' !== typeof o) {
-                return o;
-            }
-            var c = utils.isArray(o) ? [] : {};
-            var p, v, keys = Object.getOwnPropertyNames(o);
-            for (var i = 0, len = keys.length; i < len; i += 1) {
-                p = keys[i];
-                v = o[p];
-                if (v && 'object' === typeof v) {
-                    c[p] = utils.cloneObj(v);
-                }
-                else {
-                    c[p] = v;
-                }
-            }
-            return c;
         }
     };
 
@@ -419,10 +401,10 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.1",
+        version:"1.2.2",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
-        _coreModules:{}, //static
+        __coreModules:{}, //static
         _create:function (window, jQuery) {
             this._super();
             if (!!RIAPP.global)
@@ -442,18 +424,23 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             this._consts = null;
             this._templateLoaders = {};
             this._promises = [];
+            this._nextAppInstanceNum = 0;
 
             //initialize the required coreModules
             for (var i = 0; i < RIAPP._glob_modules.length; i += 1) {
                 curMod = {};
                 curModName = RIAPP._glob_modules[i];
-                RIAPP.Global._coreModules[curModName].apply(curMod, [this]);
+                this._coreModules[curModName].apply(curMod, [this]);
                 Object.freeze(curMod);
                 this._modInst[RIAPP._glob_modules[i]] = curMod;
             }
             this._init();
             Object.freeze(this._coreModules);
             this._waitQueue = this.utils.WaitQueue.create(this);
+        },
+        _getNextAppNum:function () {
+            this._nextAppInstanceNum +=1;
+            return this._nextAppInstanceNum;
         },
         _init:function () {
             var self = this;
@@ -583,11 +570,11 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             var self = this;
             var sections = Array.fromList(root.querySelectorAll(self._TEMPLATES_SELECTOR));
             sections.forEach(function (el) {
-                self._processTemplateSection(el);
+                self._processTemplateSection(el, null);
                 self.utils.removeNode(el);
             });
         },
-        _processTemplateSection:function(templateSection){
+        _processTemplateSection:function(templateSection, app){
             var self = this;
             var templates = Array.fromList(templateSection.querySelectorAll(self._TEMPLATE_SELECTOR));
             templates.forEach(function (el) {
@@ -599,6 +586,9 @@ RIAPP.Global = RIAPP.BaseObject.extend({
                 var fn_loader = function(){
                     return deferred.promise();
                 };
+                if (!!app){
+                    name = app.appName+'.'+name;
+                }
                 self._registerTemplateLoader(name,fn_loader);
             });
         },
@@ -641,13 +631,46 @@ RIAPP.Global = RIAPP.BaseObject.extend({
         },
         _waitForNotLoading:function (callback, callbackArgs) {
             this._waitQueue.enQueue({
-                prop:'_isLoading',
+                prop:'isLoading',
                 groupName:null,
                 predicate:function (val) {
                     return !val;
                 },
                 action:callback,
                 actionArgs:callbackArgs
+            });
+        },
+        _loadTemplatesAsync:function (fn_loader, app) {
+            var self = this, promise = fn_loader(), old = self.isLoading;
+            self._promises.push(promise);
+            if (self.isLoading !== old)
+                self.raisePropertyChanged('isLoading');
+            promise.done(function(html){
+                self.utils.removeFromArray(self._promises,promise);
+                try
+                {
+                    var tmpDiv = self.document.createElement('div');
+                    tmpDiv.innerHTML = html;
+                    self._processTemplateSection(tmpDiv,app);
+                }
+                catch(ex){
+                    self._onError(ex,self);
+                }
+                if (!self.isLoading)
+                    self.raisePropertyChanged('isLoading');
+            });
+            promise.fail(function(err){
+                self.utils.removeFromArray(self._promises,promise);
+                if (!self.isLoading)
+                    self.raisePropertyChanged('isLoading');
+                if (!!err && !!err.message){
+                    self._onError(err,self);
+                }
+                else if (!!err && !!err.responseText){
+                    self._onError(new Error(err.responseText),self);
+                }
+                else
+                    self._onError(new Error('Failed to load templates'),self);
             });
         },
         reThrow:function (ex, isHandled) {
@@ -691,44 +714,22 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             return images + imageName;
         },
         loadTemplates:function (url) {
-           var self = this, promise = this.$.get(url), old = self._isLoading;
-            self._promises.push(promise);
-            if (self._isLoading !== old)
-                self.raisePropertyChanged('_isLoading');
-            promise.done(function(html){
-                self.utils.removeFromArray(self._promises,promise);
-                try
-                {
-                    var tmpDiv = self.document.createElement('div');
-                    tmpDiv.innerHTML = html;
-                    self._processTemplateSection(tmpDiv);
-                }
-                catch(ex){
-                   self._onError(ex,self);
-                }
-                if (!self._isLoading)
-                    self.raisePropertyChanged('_isLoading');
-            });
-            promise.fail(function(err){
-                self.utils.removeFromArray(self._promises,promise);
-                if (!self._isLoading)
-                    self.raisePropertyChanged('_isLoading');
-                if (!!err && !!err.message){
-                    self._onError(err,self);
-                }
-                else if (!!err && !!err.responseText){
-                    self._onError(new Error(err.responseText),self);
-                }
-                else
-                    self._onError(new Error('Failed to load template section from: '+url),self);
-            });
+            var self= this;
+           this._loadTemplatesAsync(function(){
+               return self.utils.performAjaxGet(url);
+           },null);
         },
         toString:function () {
             return 'Global';
         }
     },
     {
-        _isLoading:{
+        _coreModules:{
+            get:function () {
+                return this.__coreModules;
+            }
+        },
+        isLoading:{
             get:function () {
                 return this._promises.length >0;
             }
@@ -1163,6 +1164,9 @@ RIAPP.Global._coreModules.utils = function (global) {
                 });
             return promise;
         },
+        performAjaxGet:function(url){
+           return global.$.get(url);
+        },
         check_is:{
             Null:function (a) {
                 return a === null;
@@ -1174,17 +1178,13 @@ RIAPP.Global._coreModules.utils = function (global) {
             nt:function (a) {
                 return (a === null || a === undefined);
             },
-            Function:function (a) {
-                return base_utils.isFunc(a);
-            },
+            Function:base_utils.isFunc,
             String:function (a) {
                 if (utils.check_is.nt(a)) return false;
                 var rx = /string/i;
                 return (typeof (a) === 'string') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
             },
-            Array:function (a) {
-                return base_utils.isArray(a);
-            },
+            Array:base_utils.isArray,
             Boolean:function (a) {
                 if (utils.check_is.nt(a)) return false;
                 var rx = /boolean/i;
@@ -1206,12 +1206,12 @@ RIAPP.Global._coreModules.utils = function (global) {
                 return (typeof (a) === 'number') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
             },
             Object:function (a) {
-                if (utils.nt(a)) return false;
+                if (utils.check_is.nt(a)) return false;
                 var rx = /object/i;
                 return (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
             },
             RegExp:function (a) {
-                if (utils.nt(a)) return false;
+                if (utils.check_is.nt(a)) return false;
                 var rx = /regexp/i;
                 return (typeof (a) === 'function') ? rx.test(a.constructor.toString()) : false;
             },
@@ -1239,9 +1239,9 @@ RIAPP.Global._coreModules.utils = function (global) {
         },
         extend:function (deep, defaults, options) {
             if (deep)
-                return global.$.extend(true, defaults, options);
+                return utils.cloneObj(options, defaults);
             else
-                return global.$.extend(defaults, options);
+                return utils.mergeObj(options, defaults);
         },
         getElementById:function (id) {
             return global.document.getElementById(id);
@@ -1348,21 +1348,49 @@ RIAPP.Global._coreModules.utils = function (global) {
                 }
             }
         },
-        createDeferred:function (fn) {
-            if (!fn)
-                return global.$.Deferred();
-            else
-                return global.$.Deferred(fn);
+        createDeferred:function () {
+            return global.$.Deferred();
         },
-        merge: function(o1,o2){
-            if (o1 == null || o2 == null)
-                return o1;
+        cloneObj:function (o, mergeIntoObj) {
+            var c, i, len;
+            if (!o) {
+                return o;
+            }
 
-            utils.forEachProp(o2, function(key){
-                o1[key] = o2[key];
-            });
+            if (utils.check_is.Array(o)){
+                len = o.length;
+                c = new Array(len);
+                for (i = 0; i < len; i += 1) {
+                    c[i] = utils.cloneObj(o[i], null);
+                }
+            }
+            else if (utils.check_is.Object(o)){
+                c = mergeIntoObj || {};
+                var p, v, keys = Object.getOwnPropertyNames(o);
+                len = keys.length;
+                for (i = 0; i < len; i += 1) {
+                    p = keys[i];
+                    v = o[p];
+                    c[p] = utils.cloneObj(v, null);
+                }
+            }
+            else
+                return o;
 
-            return o1;
+            return c;
+        },
+        mergeObj: function(obj, mergeIntoObj){
+            if (!mergeIntoObj){
+                mergeIntoObj = {};
+            }
+            if (!obj)
+                return mergeIntoObj;
+            var names = Object.getOwnPropertyNames(obj), n;
+            for(var i= 0,len=names.length;i<len;i+=1){
+                n = names[i];
+                mergeIntoObj[n] = obj[n];
+            }
+            return mergeIntoObj;
         },
         removeFromArray:function(array,obj){
             var i = array.indexOf(obj);
@@ -1735,24 +1763,21 @@ RIAPP.Global._coreModules.utils = function (global) {
         }
     }, null);
 
-    utils.merge(thisModule, utils);
+    utils.mergeObj(utils, thisModule);
     global.utils = thisModule; //for more speedy access
 };
 
 RIAPP.Global._coreModules.riapp = function (global) {
-    var thisModule = this, utils = global.utils, consts = global.consts;
+    var thisModule = this, utils = global.utils, consts = global.consts, coreModules = {}, userModules = {};
 
     var AppType = RIAPP.BaseObject.extend({
-            _nextInstanceNum:0, //static
-            _coreModules:{}, //static
-            _userModules:{}, //static
             _DATA_BIND_SELECTOR:['*[', consts.DATA_ATTR.DATA_BIND, ']'].join(''),
             _TEMPLATES_DATA_BIND_SELECTOR:['section.', RIAPP.css_riaTemplate, ' *[', consts.DATA_ATTR.DATA_BIND, ']'].join(''),
             //static method
             registerModule:function (name, fn_module) {
-                if (!!AppType._userModules[name])
+                if (!!userModules[name])
                     throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_MODULE_ALREDY_REGISTERED, name));
-                AppType._userModules[name] = fn_module;
+               userModules[name] = fn_module;
             },
             _create:function (options) {
                 this._super();
@@ -1771,38 +1796,16 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 this._converters = {};
                 this._dbContext = null;
                 this._lftmBind = null; //lifetime object to store references to the bindings created by this application
-                this._instanceNum = AppType._nextInstanceNum;
-                AppType._nextInstanceNum += 1;
-                this.ELV_STORE_KEY = consts.DATA_ATTR.EL_VIEW_KEY + this._instanceNum;
+                this._instanceNum = global._getNextAppNum();
+                this._ELV_STORE_KEY = consts.DATA_ATTR.EL_VIEW_KEY + this._instanceNum;
                 this._bindingContentFactory = null;
                 this._modInst = {};
-                this._exports = {}; //exported types
-                this._types = {
-                    _grids:{},
-                    _elViews:{},
-                    _registerGrid:function (grid) {
-                        if (!this._grids[grid.uniqueID]) {
-                            this._grids[grid.uniqueID] = grid;
-                            global._onGridAdded(grid);
-                        }
-                    },
-                    _unregisterGrid:function (grid) {
-                        if (!this._grids[grid.uniqueID])
-                            return;
-                        delete this._grids[grid.uniqueID];
-                        global._onGridRemoved(grid);
-                    },
-                    _destroyGrids:function () {
-                        var self = this;
-                        utils.forEachProp(this._grids, function (id) {
-                            self._grids[id].destroy();
-                        });
-                    }
-                };
-                this._global = global;
+                this._exports = {}; //registered exported types
+                this._elViews = {}; //registered element view types
                 //each Element view created by application stored in this hash map
                 //it keeps them alive until they are destroyed
                 this._elViewStore = {};
+                this._global = global;
                 //used to create sequential keys to store new element views
                 this._nextElViewStoreKey = 0;
                 this._userCode = {};
@@ -1811,7 +1814,7 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 //initialize core Modules
                 for (i = 0, len = RIAPP._app_modules.length; i < len; i += 1) {
                     curMod = {};
-                    AppType._coreModules[RIAPP._app_modules[i]].apply(curMod, [self]);
+                    coreModules[RIAPP._app_modules[i]].apply(curMod, [self]);
                     Object.freeze(curMod);
                     this._modInst[RIAPP._app_modules[i]] = curMod;
                 }
@@ -1819,11 +1822,11 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 var mod_names = (utils.check_is.Array(opts.moduleNames) && opts.moduleNames.length > 0) ? opts.moduleNames : [];
                 //initialize Modules added by user
                 for (i = 0, len = mod_names.length; i < len; i += 1) {
-                    if (!AppType._userModules[mod_names[i]]) {
+                    if (!userModules[mod_names[i]]) {
                         throw new Error(String.format(RIAPP.ERRS.ERR_MODULE_UNDEFINED, mod_names[i]));
                     }
                     curMod = {};
-                    AppType._userModules[mod_names[i]].apply(curMod, [self]);
+                    userModules[mod_names[i]].apply(curMod, [self]);
                     Object.freeze(curMod);
                     this._modInst[mod_names[i]] = curMod;
                 }
@@ -1835,18 +1838,13 @@ RIAPP.Global._coreModules.riapp = function (global) {
                     return;
                 
                 var self = this;
-                if (!!self._lftmBind) {
-                    self._lftmBind.destroy();
-                    self._lftmBind = null;
-                }
-                self._types._destroyGrids();
+                global._unregisterApp(self);
+                self._destroyBindings();
                 if (!!self._dbContext) {
                     self._dbContext.destroy();
                     self._dbContext = null;
                 }
-                global._unregisterApp(self);
-                self._types._grids = {};
-                self._types._elViews = {};
+                self._elViews = {};
                 self._exports = {};
                 self._global = null;
                 self._options = null;
@@ -1877,21 +1875,38 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 this.raiseEvent('define_calc', args);
             },
             _getBindingOption:function (options, defaultTarget, defaultSource) {
-                var opts = {};
+                var BINDING_MODE = this.modules.binding.BINDING_MODE,
+                opts = {
+                    mode:BINDING_MODE[1],
+                    converterParam:null,
+                    converter:null,
+                    targetPath:null,
+                    sourcePath:null,
+                    target:null,
+                    source:null,
+                    isSourceFixed:false
+                };
+
                 var fixedSource = options.source, fixedTarget = options.target;
+
                 if (!options.sourcePath && !!options.to)
                     opts.sourcePath = options.to;
-                else
+                else if (!!options.sourcePath)
                     opts.sourcePath = options.sourcePath;
+                if (!!options.targetPath)
+                    opts.targetPath = options.targetPath;
+                if (!!options.converterParam)
+                    opts.converterParam = options.converterParam;
+                if (!!options.mode)
+                    opts.mode = options.mode;
 
-                opts.targetPath = options.targetPath;
-                opts.converterParam = options.converterParam;
-                opts.mode = options.mode;
-                if (!!options.converter && utils.check_is.String(options.converter)) {
-                    opts.converter = this.getConverter(options.converter);
+                if (!!options.converter){
+                    if (utils.check_is.String(options.converter))
+                        opts.converter = this.getConverter(options.converter);
+                    else
+                        opts.converter = options.converter;
                 }
-                else
-                    opts.converter = options.converter;
+
 
                 if (!fixedTarget)
                     opts.target = defaultTarget;
@@ -1912,7 +1927,6 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 }
                 else {
                     opts.isSourceFixed = true;
-
                     if (utils.check_is.String(fixedSource)) {
                         if (fixedSource == 'this') {
                             opts.source = defaultTarget;
@@ -1928,13 +1942,11 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 return opts;
             },
             _getElViewType:function (name) {
-                var elViews = this._types._elViews;
-                return elViews[name];
+                return this._elViews[name];
             },
             //get element view associated with HTML element (if any)
             _getElView:function (el) {
-                var key = this.ELV_STORE_KEY;
-                var storeID = el.getAttribute(key);
+                var storeID = el.getAttribute(this._ELV_STORE_KEY);
                 if (!!storeID) {
                     return this._elViewStore[storeID];
                 }
@@ -1942,25 +1954,49 @@ RIAPP.Global._coreModules.riapp = function (global) {
             },
             //store association of HTML element with its element View
             _setElView:function (el, view) {
-                var key = this.ELV_STORE_KEY;
-                var storeID = el.getAttribute(key);
+                var storeID = el.getAttribute(this._ELV_STORE_KEY);
                 if (!storeID) {
                     if (!view)
                         return;
                     storeID = 's_' + this._nextElViewStoreKey;
                     this._nextElViewStoreKey += 1;
-                    el.setAttribute(key, storeID);
+                    el.setAttribute(this._ELV_STORE_KEY, storeID);
                     this._elViewStore[storeID] = view;
                 }
                 else {
                     if (!view) {
-                        el.removeAttribute(key);
+                        el.removeAttribute(this._ELV_STORE_KEY);
                         delete this._elViewStore[storeID];
                     }
                     else {
                         this._elViewStore[storeID] = view;
                     }
                 }
+            },
+            //check if element is used as DataForm
+            _isDataForm:function (el) {
+                if (!el)
+                    return false;
+                var attr = el.getAttribute(consts.DATA_ATTR.DATA_VIEW);
+                if (!attr) {
+                    return false;
+                }
+                var opts = this.parser.parseOptions(attr);
+                return (opts.length > 0 && opts[0].name === consts.ELVIEW_NM.DATAFORM);
+            },
+            //check if element is placed inside DataForm
+            _isInsideDataForm:function (el) {
+                if (!el)
+                    return false;
+                var parent = el.parentElement;
+                if (!!parent) {
+                    if (!this._isDataForm(parent)) {
+                        return this._isInsideDataForm(parent);
+                    }
+                    else
+                        return true;
+                }
+                return false;
             },
             //checks for binding html elements attributes and parses attribute data to create binding for elements
             _bindTemplateElements:function (templateEl) {
@@ -1988,31 +2024,6 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 });
 
                 return lftm;
-            },
-            //check if element is used as DataForm
-            _isDataForm:function (el) {
-                if (!el)
-                    return false;
-                var attr = el.getAttribute(consts.DATA_ATTR.DATA_VIEW);
-                if (!attr) {
-                    return false;
-                }
-                var opts = this.parser.parseOptions(attr);
-                return (opts.length > 0 && opts[0].name === consts.ELVIEW_NM.DATAFORM);
-            },
-            //check if element is placed inside DataForm
-            _isInsideDataForm:function (el) {
-                if (!el)
-                    return false;
-                var parent = el.parentElement;
-                if (!!parent) {
-                    if (!this._isDataForm(parent)) {
-                        return this._isInsideDataForm(parent);
-                    }
-                    else
-                        return true;
-                }
-                return false;
             },
             _bindElements:function (scope, dctx, isDataForm) {
                 var self = this;
@@ -2106,23 +2117,23 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 }
                 return utils.extend(true, defaultOp, op);
             },
-            getNewObjectID:function () {
-                return utils.getNewID();
-            },
-            setUpBindings:function () {
-                var defScope = global.document, defDctxt = this;
-                this.destroyBindings();
-                this._lftmBind = this._bindElements(defScope, defDctxt, false);
-            },
-            destroyBindings:function () {
+            _destroyBindings:function () {
                 if (!!this._lftmBind) {
                     this._lftmBind.destroy();
                     this._lftmBind = null;
                 }
             },
+            getNewObjectID:function () {
+                return utils.getNewID();
+            },
+            setUpBindings:function () {
+                var defScope = global.document, defDctxt = this;
+                this._destroyBindings();
+                this._lftmBind = this._bindElements(defScope, defDctxt, false);
+            },
             registerElView:function (name, type) {
-                if (!this._types._elViews[name])
-                    this._types._elViews[name] = type;
+                if (!this._elViews[name])
+                    this._elViews[name] = type;
             },
             getElementView:function (el) {
                 var viewType, attr, attr_obj_arr, attr_obj, options, elView;
@@ -2191,21 +2202,12 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 }
                 return res;
             },
-            findGrid:function (name) {
-                var grids = this._types._grids, ids = utils.getProps(grids), id;
-                for (var i = 0; i < ids.length; ++i) {
-                    id = ids[i];
-                    if (grids[id].name === name)
-                        return grids[id];
-                }
-                return null;
-            },
-            bind:function (options) {
+            bind:function (opts) {
                 var BINDING_MODE = this.modules.binding.BINDING_MODE;
-                var opts = utils.extend(false, { target:null, source:null,
-                    targetPath:null, sourcePath:null, mode:"OneWay",
+                opts = utils.extend(false, {target:null, source:null,
+                    targetPath:null, sourcePath:null, mode:BINDING_MODE[1],
                     converter:null, converterParam:null, isSourceFixed:false
-                }, options);
+                }, opts);
 
                 if (!opts.target) {
                     throw new Error(RIAPP.ERRS.ERR_BIND_TARGET_EMPTY);
@@ -2215,8 +2217,9 @@ RIAPP.Global._coreModules.riapp = function (global) {
                     throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_BIND_TGTPATH_INVALID, opts.targetPath));
                 }
 
-                if (BINDING_MODE.indexOf(opts.mode) < 0)
+                if (BINDING_MODE.indexOf(opts.mode) < 0){
                     throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_BIND_MODE_INVALID, opts.mode));
+                }
 
                 if (!RIAPP.BaseObject.isPrototypeOf(opts.target)) {
                     throw new Error(RIAPP.ERRS.ERR_BIND_TARGET_INVALID);
@@ -2256,6 +2259,20 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 }
             },
             /*
+             loads a group of templates from the server
+             */
+            loadTemplates:function (url) {
+               this.loadTemplatesAsync(function(){
+                    return global.utils.performAjaxGet(url);
+                });
+            },
+            /*
+             loads a group of templates from the server
+            */
+            loadTemplatesAsync:function (fn_loader) {
+                global._loadTemplatesAsync(fn_loader,this);
+            },
+            /*
                 fn_loader must load template and return promise which resolves
                 with loaded HTML string
             */
@@ -2274,6 +2291,11 @@ RIAPP.Global._coreModules.riapp = function (global) {
             }
         },
         {
+            _coreModules:{
+                get:function () {
+                    return coreModules;
+                }
+            },
             bindingContentFactory:{
                 get:function () {
                     return this._bindingContentFactory;
@@ -2809,7 +2831,7 @@ RIAPP.Application._coreModules.baseElView = function (app) {
     };
     Object.freeze(_css);
 
-    thisModule.BaseElView = RIAPP.BaseObject.extend({
+    var BaseElView = RIAPP.BaseObject.extend({
             _app:app,
             _create:function (el, options) {
                 this._super();
@@ -3024,7 +3046,108 @@ RIAPP.Application._coreModules.baseElView = function (app) {
                 }
             }
         }, function (obj) {
+            thisModule.BaseElView = obj;
             app.registerType('BaseElView', obj);
+        });
+
+    var EditableElView = BaseElView.extend(null,
+        {
+            isEnabled:{
+                set:function (v) {
+                    v = !!v;
+                    if (v !== this.isEnabled) {
+                        this._setIsEnabled(this.$el, v);
+                        this.raisePropertyChanged('isEnabled');
+                    }
+                },
+                get:function () {
+                    return this._getIsEnabled(this.$el);
+                }
+            }
+        }, function (obj) {
+            thisModule.EditableElView = obj;
+            app.registerType('EditableElView',obj);
+        });
+
+    var CommandElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._command = null;
+                this._commandParam = null;
+            },
+            destroy:function () {
+                this.command = null;
+                this.commandParam = null;
+                this._super();
+            },
+            invokeCommand:function () {
+                var self = this, command = self.command, param = self.commandParam;
+                if (!!command && command.canExecute(self, param)) {
+                    setTimeout(function(){
+                        command.execute(self, param);
+                    },0);
+                }
+            },
+            _onCommandChanged:function () {
+                this.raisePropertyChanged('command');
+            },
+            _setCommand:function (v) {
+                var self = this;
+                if (v !== this._command) {
+                    if (!!this._command) {
+                        this._command.removeNSHandlers(this._objId);
+                    }
+                    this._command = v;
+                    if (!!this._command) {
+                        this._command.addHandler('canExecute_changed', function (sender, args) {
+                            self.isEnabled = sender.canExecute(self, self.commandParam);
+                        }, this._objId);
+                        self.isEnabled = this._command.canExecute(self, self.commandParam);
+                    }
+                    else
+                        self.isEnabled = false;
+                    this._onCommandChanged();
+                }
+            },
+            toString:function () {
+                return 'CommandElView';
+            }
+        },
+        {
+            isEnabled:{
+                set:function (v) {
+                    if (v !== this.isEnabled) {
+                        this._setIsEnabled(this.$el, v);
+                        this.raisePropertyChanged('isEnabled');
+                    }
+                },
+                get:function () {
+                    return this._getIsEnabled(this.$el);
+                }
+            },
+            command:{
+                set:function (v) {
+                    this._setCommand(v);
+                },
+                get:function () {
+                    return this._command;
+                }
+            },
+            commandParam:{
+                set:function (v) {
+                    if (v !== this._commandParam) {
+                        this._commandParam = v;
+                        this.raisePropertyChanged('commandParam');
+                    }
+                },
+                get:function () {
+                    return this._commandParam;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.CommandElView = obj;
+            app.registerType('CommandElView',obj);
         });
 };
 
@@ -4340,7 +4463,7 @@ RIAPP.Application._coreModules.collection = function (app) {
                     }
                 }
                 this._isEditing = true;
-                this._saveVals = utils.extend(true, {}, this._vals);
+                this._saveVals = utils.cloneObj(this._vals);
                 this._collection.currentItem = this;
                 return true;
             },
@@ -6349,7 +6472,7 @@ RIAPP.Application._coreModules.db = function (app) {
             },
             _fldChanging:function (fieldInfo, oldV, newV) {
                 if (!this._origVals) {
-                    this._origVals = utils.extend(true, {}, this._vals);
+                    this._origVals = utils.cloneObj(this._vals);
                 }
                 return true;
             },
@@ -6466,7 +6589,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     }
                     this._origVals = null;
                     if (!!this._saveVals)
-                        this._saveVals = utils.extend(true, {}, this._vals);
+                        this._saveVals = utils.cloneObj(this._vals);
                     this._changeType = CHANGE_TYPE.NONE;
                     eset._removeAllErrors(this);
                     if (!!rowInfo)
@@ -6488,10 +6611,10 @@ RIAPP.Application._coreModules.db = function (app) {
 
                     var changes = this._getStrValues(true);
                     if (!!this._origVals) {
-                        this._vals = utils.extend(true, {}, this._origVals);
+                        this._vals = utils.cloneObj(this._origVals);
                         this._origVals = null;
                         if (!!this._saveVals) {
-                            this._saveVals = utils.extend(true, {}, this._vals);
+                            this._saveVals = utils.cloneObj(this._vals);
                         }
                     }
                     this._changeType = CHANGE_TYPE.NONE;
@@ -9764,7 +9887,7 @@ RIAPP.Application._coreModules.datadialog = function (app) {
 RIAPP.Application._coreModules.datagrid = function (app) {
     var thisModule = this, global = app.global, utils = global.utils, consts = global.consts, BaseCell, DetailsRow, DetailsCell,
         BaseColumn, DataCell, Row, DataGrid, ExpanderCell, ActionsCell, RowSelectorCell, DataColumn, ExpanderColumn,
-        ActionsColumn, RowSelectorColumn;
+        ActionsColumn, RowSelectorColumn, BaseElView = app.modules.baseElView.BaseElView;
     var collMod = app.modules.collection, DataEditDialog = app.modules.datadialog.DataEditDialog,
         Template = app.modules.template.Template, TEXT = RIAPP.localizable.TEXT,
         COLUMN_TYPE = { DATA:'data', ROW_EXPANDER:'row_expander', ROW_ACTIONS:'row_actions', ROW_SELECTOR:'row_selector' };
@@ -10979,7 +11102,6 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._wrapTable();
                 this._createColumns();
                 this._bindDS();
-                this._app._types._registerGrid(this);
                 this._refreshGrid(); //fills all rows
                 this._updateColsDim();
                 this._onDSCurrentChanged();
@@ -11682,7 +11804,6 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                     this._dialog = null;
                 }
                 this._clearGrid();
-                this._app._types._unregisterGrid(this);
                 this._unbindDS();
                 this._dataSource = null;
                 this._unWrapTable();
@@ -11840,10 +11961,105 @@ RIAPP.Application._coreModules.datagrid = function (app) {
         }, function (obj) {
             thisModule.DataGrid = obj;
         });
+
+    var GridElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataSource = null;
+                this._grid = null;
+                this._gridEventCommand = null;
+                this._options = options;
+            },
+            destroy:function () {
+                if (!!this._dataSource) {
+                    this.dataSource = null;
+                }
+                this._gridEventCommand = null;
+                this._super();
+            },
+            _createGrid:function () {
+                this._grid = DataGrid.create(this._el, this._dataSource, this._options);
+                this._bindGridEvents();
+            },
+            _bindGridEvents:function () {
+                if (!this._grid)
+                    return;
+                var self = this;
+                this._grid.addHandler('row_expanded', function (s, args) {
+                    self.invokeGridEvent('row_expanded', args);
+                }, this.uniqueID);
+                this._grid.addHandler('row_selected', function (s, args) {
+                    self.invokeGridEvent('row_selected', args);
+                }, this.uniqueID);
+                this._grid.addHandler('page_changed', function (s, args) {
+                    self.invokeGridEvent('page_changed', args);
+                }, this.uniqueID);
+                this._grid.addOnDestroyed(function (s, args) {
+                    self._grid = null;
+                }, this.uniqueID);
+
+            },
+            invokeGridEvent:function (eventName, args) {
+                var self = this, data = {eventName:eventName, args:args};
+                if (!!self._gridEventCommand) {
+                    self._gridEventCommand.execute(self, data);
+                }
+            },
+            toString:function () {
+                return 'GridElView';
+            }
+        },
+        {
+            dataSource:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataSource !== v) {
+                        this._dataSource = v;
+                        if (!!this._grid && !this._grid._isDestroyCalled) {
+                            this._grid.destroy();
+                            this._grid = null;
+                        }
+                        if (!!this._dataSource) {
+                            this._createGrid();
+                        }
+                        self.invokePropChanged('grid');
+                    }
+                },
+                get:function () {
+                    return this._dataSource;
+                }
+            },
+            grid:{
+                get:function () {
+                    return this._grid;
+                }
+            },
+            gridEventCommand:{
+                set:function (v) {
+                    var old = this._gridEventCommand;
+                    if (v !== old) {
+                        if (!!this._gridEventCommand)
+                            this.invokeGridEvent('command_disconnected', {});
+                        this._gridEventCommand = v;
+                        if (!!this._gridEventCommand)
+                            this.invokeGridEvent('command_connected', {});
+                    }
+                },
+                get:function () {
+                    return this._gridEventCommand;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.GridElView = obj;
+            app.registerType('GridElView',obj);
+            app.registerElView('table', obj);
+        });
 };
 
 RIAPP.Application._coreModules.pager = function (app) {
-    var thisModule = this, global = app.global, utils = global.utils, collMod = app.modules.collection;
+    var thisModule = this, global = app.global, utils = global.utils, collMod = app.modules.collection,
+        BaseElView = app.modules.baseElView.BaseElView;
 
     var _css = {
         pager:'ria-data-pager',
@@ -12292,11 +12508,63 @@ RIAPP.Application._coreModules.pager = function (app) {
             thisModule.Pager = obj;
         });
 
+    var PagerElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataSource = null;
+                this._pager = null;
+                this._options = options;
+            },
+            destroy:function () {
+                if (!!this._pager && !this._pager._isDestroyCalled) {
+                    this._pager.destroy();
+                }
+                this._pager = null;
+                this._dataSource = null;
+                this._super();
+            },
+            toString:function () {
+                return 'PagerElView';
+            }
+        },
+        {
+            dataSource:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataSource !== v) {
+                        this._dataSource = v;
+                        if (!!this._pager)
+                            this._pager.destroy();
+                        this._pager = null;
+                        if (!!this._dataSource && this._dataSource.isPagingEnabled) {
+                            this._pager =Pager.create(this._el, this._dataSource, this._options);
+                            this._pager.addOnDestroyed(function () {
+                                self._pager = null;
+                            });
+                        }
+                        self.invokePropChanged('pager');
+                    }
+                },
+                get:function () {
+                    return this._dataSource;
+                }
+            },
+            pager:{
+                get:function () {
+                    return this._pager;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.PagerElView = obj;
+            app.registerType('PagerElView',obj);
+            app.registerElView('pager', obj);
+        });
 };
 
 RIAPP.Application._coreModules.stackpanel = function (app) {
     var thisModule = this, global = app.global, utils = global.utils, consts = global.consts,
-        collMod = app.modules.collection, Template = app.modules.template.Template;
+        collMod = app.modules.collection, Template = app.modules.template.Template, BaseElView = app.modules.baseElView.BaseElView;
     var _css = {
         stackpanel:'ria-stackpanel',
         item:'stackpanel-item',
@@ -12625,10 +12893,65 @@ RIAPP.Application._coreModules.stackpanel = function (app) {
         function (obj) {
             thisModule.StackPanel = obj;
         });
+
+
+    var StackPanelElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataSource = null;
+                this._panel = null;
+                this._options = options;
+            },
+            destroy:function () {
+                if (!!this._panel && !this._panel._isDestroyCalled) {
+                    this._panel.destroy();
+                }
+                this._panel = null;
+                this._dataSource = null;
+                this._super();
+            },
+            toString:function () {
+                return 'StackPanelElView';
+            }
+        },
+        {
+            dataSource:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataSource !== v) {
+                        this._dataSource = v;
+                        if (!!this._panel)
+                            this._panel.destroy();
+                        this._panel = null;
+                        if (!!this._dataSource) {
+                            this._panel = StackPanel.create(this._el, this._dataSource, this._options);
+                            this._panel.addOnDestroyed(function () {
+                                self._panel = null;
+                            });
+                        }
+                        self.invokePropChanged('panel');
+                    }
+                },
+                get:function () {
+                    return this._dataSource;
+                }
+            },
+            panel:{
+                get:function () {
+                    return this._panel;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.StackPanelElView = obj;
+            app.registerType('StackPanelElView',obj);
+            app.registerElView('stackpanel', obj);
+        });
 };
 
 RIAPP.Application._coreModules.listbox = function (app) {
-    var thisModule = this, global = app.global, utils = global.utils, consts = global.consts, collMod = app.modules.collection;
+    var thisModule = this, global = app.global, utils = global.utils, consts = global.consts,
+        collMod = app.modules.collection, EditableElView = app.modules.baseElView.EditableElView;
 
     var ListBox = RIAPP.BaseObject.extend({
             _app:app,
@@ -13068,6 +13391,87 @@ RIAPP.Application._coreModules.listbox = function (app) {
             thisModule.ListBox = obj;
         });
 
+    var SelectElView = EditableElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataSource = null;
+                this._listBox = null;
+                this._options = options;
+            },
+            destroy:function () {
+                if (!!this._listBox && !this._listBox._isDestroyCalled) {
+                    this._listBox.destroy();
+                }
+                this._listBox = null;
+                this._dataSource = null;
+                this._super();
+            },
+            toString:function () {
+                return 'SelectElView';
+            }
+        },
+        {
+            dataSource:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataSource !== v) {
+                        this._dataSource = v;
+                        if (!!this._listBox)
+                            this._listBox.destroy();
+                        this._listBox = null;
+                        if (!!this._dataSource) {
+                            this._listBox = ListBox.create(this._el, this._dataSource, this._options);
+                            this._listBox.addOnDestroyed(function () {
+                                self._listBox = null;
+                            }, this.uniqueID);
+                            this._listBox.addOnPropertyChange('*', function (sender, args) {
+                                self.raisePropertyChanged(args.property);
+                            }, this.uniqueID);
+                        }
+                        self.invokePropChanged('listBox');
+                    }
+                },
+                get:function () {
+                    return this._dataSource;
+                }
+            },
+            selectedValue:{
+                set:function (v) {
+                    if (!this._listBox)
+                        return;
+                    if (this._listBox.selectedValue !== v) {
+                        this._listBox.selectedValue = v;
+                    }
+                },
+                get:function () {
+                    if (!this._listBox)
+                        return null;
+                    return this._listBox.selectedValue;
+                }
+            },
+            selectedItem:{
+                set:function (v) {
+                    if (!this._listBox)
+                        return;
+                    this._listBox.selectedItem = v;
+                },
+                get:function () {
+                    if (!this._listBox)
+                        return null;
+                    return this._listBox.selectedItem;
+                }
+            },
+            listBox:{
+                get:function () {
+                    return this._listBox;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.SelectElView = obj;
+            app.registerType('SelectElView',obj);
+            app.registerElView('select', obj);
+        });
 };
 
 RIAPP.Application._coreModules.dataform = function (app) {
@@ -13408,16 +13812,106 @@ RIAPP.Application._coreModules.dataform = function (app) {
         function (obj) {
             thisModule.DataForm = obj;
         });
+
+    var DataFormElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataContext = null;
+                this._form = null;
+                this._options = options;
+            },
+            _getErrorTipInfo:function (errors) {
+                var tip = ['<b>', ERRTEXT.errorInfo, '</b>', '<ul>'];
+                errors.forEach(function (info) {
+                    var fieldName = info.fieldName, res = '';
+                    if (!!fieldName) {
+                        res = ERRTEXT.errorField + ' ' + fieldName
+                    }
+                    info.errors.forEach(function (str) {
+                        if (!!res)
+                            res = res + ' -> ' + str;
+                        else
+                            res = str;
+                    });
+                    tip.push('<li>' + res + '</li>');
+                    res = '';
+                });
+                tip.push('</ul>');
+                return tip.join('');
+            },
+            _updateErrorUI:function (el, errors) {
+                if (!el) {
+                    return;
+                }
+                var $el = this.$el;
+                if (!!errors && errors.length > 0) {
+                    var $img, image_src = global.getImagePath('warning.png');
+                    $img = global.$('<img name="error_info" alt="error_info" class="error-info" />');
+                    $el.prepend($img);
+                    $img.get(0).src = image_src;
+                    utils.addToolTip($img, this._getErrorTipInfo(errors), _css.errorTip);
+                    this._setFieldError(true);
+                }
+                else {
+                    $el.children('img[name="error_info"]').remove();
+                    this._setFieldError(false);
+                }
+            },
+            destroy:function () {
+                if (!!this._form && !this._form._isDestroyCalled) {
+                    this._form.destroy();
+                }
+                this._form = null;
+                this._dataContext = null;
+                this._super();
+            },
+            toString:function () {
+                return 'DataFormElView';
+            }
+        },
+        {
+            dataContext:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataContext !== v) {
+                        this._dataContext = v;
+                        if (!this._form)
+                            this._form = DataForm.create(this._el, this._options);
+                        this._form.dataContext = this._dataContext;
+                        this._form.addOnDestroyed(function () {
+                            self._form = null;
+                        });
+                        this.form.addOnPropertyChange('validationErrors', function (item, args) {
+                            self.validationErrors = item.validationErrors;
+                        }, this._objId);
+                        self.invokePropChanged('form');
+                    }
+                },
+                get:function () {
+                    return this._dataContext;
+                }
+            },
+            form:{
+                get:function () {
+                    return this._form;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.DataFormElView = obj;
+            app.registerType('DataFormElView',obj);
+            app.registerElView(global.consts.ELVIEW_NM.DATAFORM, obj);
+        });
 };
 
 RIAPP.Application._coreModules.elview = function (app) {
-    var thisModule = this, global = app.global, utils = global.utils,
-        baseElViewMod = app.modules.baseElView, ERRTEXT = RIAPP.localizable.VALIDATE,
-        gridMod = app.modules.datagrid, pagerMod = app.modules.pager, stackpanelMod = app.modules.stackpanel,
-        listboxMod = app.modules.listbox, dataformMod = app.modules.dataform;
-    var BaseElView = baseElViewMod.BaseElView, _css = baseElViewMod.css;
+    var thisModule = this, global = app.global, utils = global.utils, baseElViewMod = app.modules.baseElView;
+    var BaseElView = baseElViewMod.BaseElView,  EditableElView = baseElViewMod.EditableElView,
+        CommandElView = baseElViewMod.CommandElView, _css = baseElViewMod.css;
 
     thisModule.BaseElView = BaseElView;
+    thisModule.EditableElView = EditableElView;
+    thisModule.CommandElView = CommandElView;
 
     var DebuggerElView = BaseElView.extend({
             _init:function (options) {
@@ -13439,29 +13933,11 @@ RIAPP.Application._coreModules.elview = function (app) {
                     return this._someProp;
                 }
             }
-        }, function (obj) {
+        },
+        function (obj) {
             thisModule.DebuggerElView = obj;
             app.registerType('DebuggerElView',obj);
             app.registerElView('debugger', obj);
-        });
-
-    var EditableElView = BaseElView.extend(null,
-        {
-            isEnabled:{
-                set:function (v) {
-                    v = !!v;
-                    if (v !== this.isEnabled) {
-                        this._setIsEnabled(this.$el, v);
-                        this.raisePropertyChanged('isEnabled');
-                    }
-                },
-                get:function () {
-                    return this._getIsEnabled(this.$el);
-                }
-            }
-        }, function (obj) {
-            thisModule.EditableElView = obj;
-            app.registerType('EditableElView',obj);
         });
 
     var TextBoxElView = EditableElView.extend({
@@ -13798,88 +14274,6 @@ RIAPP.Application._coreModules.elview = function (app) {
             app.registerElView('input:radio', obj);
         });
 
-
-    var CommandElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._command = null;
-                this._commandParam = null;
-            },
-            destroy:function () {
-                this.command = null;
-                this.commandParam = null;
-                this._super();
-            },
-            invokeCommand:function () {
-                var self = this, command = self.command, param = self.commandParam;
-                if (!!command && command.canExecute(self, param)) {
-                    setTimeout(function(){
-                        command.execute(self, param);
-                    },0);
-                }
-            },
-            _onCommandChanged:function () {
-                this.raisePropertyChanged('command');
-            },
-            _setCommand:function (v) {
-                var self = this;
-                if (v !== this._command) {
-                    if (!!this._command) {
-                        this._command.removeNSHandlers(this._objId);
-                    }
-                    this._command = v;
-                    if (!!this._command) {
-                        this._command.addHandler('canExecute_changed', function (sender, args) {
-                            self.isEnabled = sender.canExecute(self, self.commandParam);
-                        }, this._objId);
-                        self.isEnabled = this._command.canExecute(self, self.commandParam);
-                    }
-                    else
-                        self.isEnabled = false;
-                    this._onCommandChanged();
-                }
-            },
-            toString:function () {
-                return 'CommandElView';
-            }
-        },
-        {
-            isEnabled:{
-                set:function (v) {
-                    if (v !== this.isEnabled) {
-                        this._setIsEnabled(this.$el, v);
-                        this.raisePropertyChanged('isEnabled');
-                    }
-                },
-                get:function () {
-                    return this._getIsEnabled(this.$el);
-                }
-            },
-            command:{
-                set:function (v) {
-                    this._setCommand(v);
-                },
-                get:function () {
-                    return this._command;
-                }
-            },
-            commandParam:{
-                set:function (v) {
-                    if (v !== this._commandParam) {
-                        this._commandParam = v;
-                        this.raisePropertyChanged('commandParam');
-                    }
-                },
-                get:function () {
-                    return this._commandParam;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.CommandElView = obj;
-            app.registerType('CommandElView',obj);
-        });
-
     var TemplateElView = CommandElView.extend({
             _init: function(options){
                 this._super(options);
@@ -13932,93 +14326,11 @@ RIAPP.Application._coreModules.elview = function (app) {
                     return this._template;
                 }
             }
-        }, function (obj) {
+        },
+        function (obj) {
             thisModule.TemplateElView = obj;
             app.registerType('TemplateElView',obj);
             app.registerElView('template', obj);
-        });
-
-    var DynaContentElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._dataContext = null;
-                this._template = null;
-            },
-            _templateChanged: function(){
-                this.raisePropertyChanged('templateID');
-                if (!this._template)
-                    return;
-                this.$el.empty().append(this._template.el);
-            },
-            updateTemplate: function(name){
-                var self = this;
-                try
-                {
-                    if (!name){
-                        if (!!this._template){
-                            this._template.destroy();
-                            this._template = null;
-                            self._templateChanged();
-                        }
-                        return;
-                    }
-                    if (!this._template){
-                        this._template = this._app.getType('Template').create(name);
-                        this._template.dataContext = this._dataContext;
-                        this._template.addOnPropertyChange('templateID',function(s,a){
-                            self._templateChanged();
-                        },this._objId);
-                        self._templateChanged();
-                        return;
-                    }
-                    this._template.templateID = name;
-                }catch(ex){
-                   this._onError(ex,this);
-                   global._throwDummy(ex);
-                }
-            },
-            destroy:function () {
-                if (!!this._template){
-                    this._template.destroy();
-                    this._template = null;
-                }
-                this._dataContext = null;
-                this._super();
-            }
-        },
-        {
-            templateID:{
-                set:function (v) {
-                    this.updateTemplate(v);
-                },
-                get:function () {
-                    if (!this._template)
-                        return null;
-                    return this._template.templateID;
-                }
-            },
-            template:{
-                get:function () {
-                    return this._template;
-                }
-            },
-            dataContext:{
-                set:function (v) {
-                    var self = this;
-                    if (this._dataContext !== v) {
-                        this._dataContext = v;
-                        if (!!this._template)
-                            this._template.dataContext = this._dataContext;
-                    }
-                },
-                get:function () {
-                    return this._dataContext;
-                }
-            }
-        }, function (obj) {
-            thisModule.DynaContentElView = obj;
-            app.registerType('DynaContentElView',obj);
-            app.registerElView(global.consts.ELVIEW_NM.DYNACONT, obj);
         });
 
     var ButtonElView = CommandElView.extend({
@@ -14101,7 +14413,8 @@ RIAPP.Application._coreModules.elview = function (app) {
                     return this.$el.html();
                 }
             }
-        }, function (obj) {
+        },
+        function (obj) {
             thisModule.ButtonElView = obj;
             app.registerType('ButtonElView',obj);
             app.registerElView('input:button', obj);
@@ -14243,7 +14556,8 @@ RIAPP.Application._coreModules.elview = function (app) {
                     return this.$el.prop('href');
                 }
             }
-        }, function (obj) {
+        },
+        function (obj) {
             thisModule.AncorButtonElView = obj;
             app.registerType('AncorButtonElView',obj);
             app.registerElView('a', obj);
@@ -14283,7 +14597,8 @@ RIAPP.Application._coreModules.elview = function (app) {
         toString:function () {
             return 'ExpanderElView';
         }
-    }, {
+    },
+        {
         isExpanded:{
             set:function (v) {
                 if (this._isExpanded !== v) {
@@ -14296,7 +14611,8 @@ RIAPP.Application._coreModules.elview = function (app) {
                 return this._isExpanded;
             }
         }
-    }, function (obj) {
+    },
+        function (obj) {
         thisModule.ExpanderElView = obj;
         app.registerType('ExpanderElView',obj);
         app.registerElView('expander', obj);
@@ -14527,377 +14843,6 @@ RIAPP.Application._coreModules.elview = function (app) {
             app.registerElView('busy_indicator', obj);
         });
 
-    var GridElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._dataSource = null;
-                this._grid = null;
-                this._gridEventCommand = null;
-                this._options = options;
-            },
-            destroy:function () {
-                if (!!this._dataSource) {
-                    this.dataSource = null;
-                }
-                this._gridEventCommand = null;
-                this._super();
-            },
-            _createGrid:function () {
-                this._grid = gridMod.DataGrid.create(this._el, this._dataSource, this._options);
-                this._bindGridEvents();
-            },
-            _bindGridEvents:function () {
-                if (!this._grid)
-                    return;
-                var self = this;
-                this._grid.addHandler('row_expanded', function (s, args) {
-                    self.invokeGridEvent('row_expanded', args);
-                }, this.uniqueID);
-                this._grid.addHandler('row_selected', function (s, args) {
-                    self.invokeGridEvent('row_selected', args);
-                }, this.uniqueID);
-                this._grid.addHandler('page_changed', function (s, args) {
-                    self.invokeGridEvent('page_changed', args);
-                }, this.uniqueID);
-                this._grid.addOnDestroyed(function (s, args) {
-                    self._grid = null;
-                }, this.uniqueID);
-
-            },
-            invokeGridEvent:function (eventName, args) {
-                var self = this, data = {eventName:eventName, args:args};
-                if (!!self._gridEventCommand) {
-                    self._gridEventCommand.execute(self, data);
-                }
-            },
-            toString:function () {
-                return 'GridElView';
-            }
-        },
-        {
-            dataSource:{
-                set:function (v) {
-                    var self = this;
-                    if (this._dataSource !== v) {
-                        this._dataSource = v;
-                        if (!!this._grid && !this._grid._isDestroyCalled) {
-                            this._grid.destroy();
-                            this._grid = null;
-                        }
-                        if (!!this._dataSource) {
-                            this._createGrid();
-                        }
-                        self.invokePropChanged('grid');
-                    }
-                },
-                get:function () {
-                    return this._dataSource;
-                }
-            },
-            grid:{
-                get:function () {
-                    return this._grid;
-                }
-            },
-            gridEventCommand:{
-                set:function (v) {
-                    var old = this._gridEventCommand;
-                    if (v !== old) {
-                        if (!!this._gridEventCommand)
-                            this.invokeGridEvent('command_disconnected', {});
-                        this._gridEventCommand = v;
-                        if (!!this._gridEventCommand)
-                            this.invokeGridEvent('command_connected', {});
-                    }
-                },
-                get:function () {
-                    return this._gridEventCommand;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.GridElView = obj;
-            app.registerType('GridElView',obj);
-            app.registerElView('table', obj);
-        });
-
-    var PagerElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._dataSource = null;
-                this._pager = null;
-                this._options = options;
-            },
-            destroy:function () {
-                if (!!this._pager && !this._pager._isDestroyCalled) {
-                    this._pager.destroy();
-                }
-                this._pager = null;
-                this._dataSource = null;
-                this._super();
-            },
-            toString:function () {
-                return 'PagerElView';
-            }
-        },
-        {
-            dataSource:{
-                set:function (v) {
-                    var self = this;
-                    if (this._dataSource !== v) {
-                        this._dataSource = v;
-                        if (!!this._pager)
-                            this._pager.destroy();
-                        this._pager = null;
-                        if (!!this._dataSource && this._dataSource.isPagingEnabled) {
-                            this._pager = pagerMod.Pager.create(this._el, this._dataSource, this._options);
-                            this._pager.addOnDestroyed(function () {
-                                self._pager = null;
-                            });
-                        }
-                        self.invokePropChanged('pager');
-                    }
-                },
-                get:function () {
-                    return this._dataSource;
-                }
-            },
-            pager:{
-                get:function () {
-                    return this._pager;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.PagerElView = obj;
-            app.registerType('PagerElView',obj);
-            app.registerElView('pager', obj);
-        });
-
-    var StackPanelElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._dataSource = null;
-                this._panel = null;
-                this._options = options;
-            },
-            destroy:function () {
-                if (!!this._panel && !this._panel._isDestroyCalled) {
-                    this._panel.destroy();
-                }
-                this._panel = null;
-                this._dataSource = null;
-                this._super();
-            },
-            toString:function () {
-                return 'StackPanelElView';
-            }
-        },
-        {
-            dataSource:{
-                set:function (v) {
-                    var self = this;
-                    if (this._dataSource !== v) {
-                        this._dataSource = v;
-                        if (!!this._panel)
-                            this._panel.destroy();
-                        this._panel = null;
-                        if (!!this._dataSource) {
-                            this._panel = stackpanelMod.StackPanel.create(this._el, this._dataSource, this._options);
-                            this._panel.addOnDestroyed(function () {
-                                self._panel = null;
-                            });
-                        }
-                        self.invokePropChanged('panel');
-                    }
-                },
-                get:function () {
-                    return this._dataSource;
-                }
-            },
-            panel:{
-                get:function () {
-                    return this._panel;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.StackPanelElView = obj;
-            app.registerType('StackPanelElView',obj);
-            app.registerElView('stackpanel', obj);
-        });
-
-    var SelectElView = EditableElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._dataSource = null;
-                this._listBox = null;
-                this._options = options;
-            },
-            destroy:function () {
-                if (!!this._listBox && !this._listBox._isDestroyCalled) {
-                    this._listBox.destroy();
-                }
-                this._listBox = null;
-                this._dataSource = null;
-                this._super();
-            },
-            toString:function () {
-                return 'SelectElView';
-            }
-        },
-        {
-            dataSource:{
-                set:function (v) {
-                    var self = this;
-                    if (this._dataSource !== v) {
-                        this._dataSource = v;
-                        if (!!this._listBox)
-                            this._listBox.destroy();
-                        this._listBox = null;
-                        if (!!this._dataSource) {
-                            this._listBox = listboxMod.ListBox.create(this._el, this._dataSource, this._options);
-                            this._listBox.addOnDestroyed(function () {
-                                self._listBox = null;
-                            }, this.uniqueID);
-                            this._listBox.addOnPropertyChange('*', function (sender, args) {
-                                self.raisePropertyChanged(args.property);
-                            }, this.uniqueID);
-                        }
-                        self.invokePropChanged('listBox');
-                    }
-                },
-                get:function () {
-                    return this._dataSource;
-                }
-            },
-            selectedValue:{
-                set:function (v) {
-                    if (!this._listBox)
-                        return;
-                    if (this._listBox.selectedValue !== v) {
-                        this._listBox.selectedValue = v;
-                    }
-                },
-                get:function () {
-                    if (!this._listBox)
-                        return null;
-                    return this._listBox.selectedValue;
-                }
-            },
-            selectedItem:{
-                set:function (v) {
-                    if (!this._listBox)
-                        return;
-                    this._listBox.selectedItem = v;
-                },
-                get:function () {
-                    if (!this._listBox)
-                        return null;
-                    return this._listBox.selectedItem;
-                }
-            },
-            listBox:{
-                get:function () {
-                    return this._listBox;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.SelectElView = obj;
-            app.registerType('SelectElView',obj);
-            app.registerElView('select', obj);
-        });
-
-    var DataFormElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._dataContext = null;
-                this._form = null;
-                this._options = options;
-            },
-            _getErrorTipInfo:function (errors) {
-                var tip = ['<b>', ERRTEXT.errorInfo, '</b>', '<ul>'];
-                errors.forEach(function (info) {
-                    var fieldName = info.fieldName, res = '';
-                    if (!!fieldName) {
-                        res = ERRTEXT.errorField + ' ' + fieldName
-                    }
-                    info.errors.forEach(function (str) {
-                        if (!!res)
-                            res = res + ' -> ' + str;
-                        else
-                            res = str;
-                    });
-                    tip.push('<li>' + res + '</li>');
-                    res = '';
-                });
-                tip.push('</ul>');
-                return tip.join('');
-            },
-            _updateErrorUI:function (el, errors) {
-                if (!el) {
-                    return;
-                }
-                var $el = this.$el;
-                if (!!errors && errors.length > 0) {
-                    var $img, image_src = global.getImagePath('warning.png');
-                    $img = global.$('<img name="error_info" alt="error_info" class="error-info" />');
-                    $el.prepend($img);
-                    $img.get(0).src = image_src;
-                    utils.addToolTip($img, this._getErrorTipInfo(errors), _css.errorTip);
-                    this._setFieldError(true);
-                }
-                else {
-                    $el.children('img[name="error_info"]').remove();
-                    this._setFieldError(false);
-                }
-            },
-            destroy:function () {
-                if (!!this._form && !this._form._isDestroyCalled) {
-                    this._form.destroy();
-                }
-                this._form = null;
-                this._dataContext = null;
-                this._super();
-            },
-            toString:function () {
-                return 'DataFormElView';
-            }
-        },
-        {
-            dataContext:{
-                set:function (v) {
-                    var self = this;
-                    if (this._dataContext !== v) {
-                        this._dataContext = v;
-                        if (!this._form)
-                            this._form = dataformMod.DataForm.create(this._el, this._options);
-                        this._form.dataContext = this._dataContext;
-                        this._form.addOnDestroyed(function () {
-                            self._form = null;
-                        });
-                        this.form.addOnPropertyChange('validationErrors', function (item, args) {
-                            self.validationErrors = item.validationErrors;
-                        }, this._objId);
-                        self.invokePropChanged('form');
-                    }
-                },
-                get:function () {
-                    return this._dataContext;
-                }
-            },
-            form:{
-                get:function () {
-                    return this._form;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.DataFormElView = obj;
-            app.registerType('DataFormElView',obj);
-            app.registerElView(global.consts.ELVIEW_NM.DATAFORM, obj);
-        });
 
     var TabsElView = BaseElView.extend({
             _init:function (options) {
@@ -14952,7 +14897,8 @@ RIAPP.Application._coreModules.elview = function (app) {
             toString:function () {
                 return 'TabsElView';
             }
-        }, {
+        },
+        {
             tabsEventCommand:{
                 set:function (v) {
                     var old = this._tabsEventCommand;
@@ -14975,12 +14921,96 @@ RIAPP.Application._coreModules.elview = function (app) {
             app.registerType('TabsElView',obj);
             app.registerElView('tabs', obj);
         });
+
+    var DynaContentElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataContext = null;
+                this._template = null;
+            },
+            _templateChanged: function(){
+                this.raisePropertyChanged('templateID');
+                if (!this._template)
+                    return;
+                this.$el.empty().append(this._template.el);
+            },
+            updateTemplate: function(name){
+                var self = this;
+                try
+                {
+                    if (!name){
+                        if (!!this._template){
+                            this._template.destroy();
+                            this._template = null;
+                            self._templateChanged();
+                        }
+                        return;
+                    }
+                    if (!this._template){
+                        this._template = this._app.getType('Template').create(name);
+                        this._template.dataContext = this._dataContext;
+                        this._template.addOnPropertyChange('templateID',function(s,a){
+                            self._templateChanged();
+                        },this._objId);
+                        self._templateChanged();
+                        return;
+                    }
+                    this._template.templateID = name;
+                }catch(ex){
+                    this._onError(ex,this);
+                    global._throwDummy(ex);
+                }
+            },
+            destroy:function () {
+                if (!!this._template){
+                    this._template.destroy();
+                    this._template = null;
+                }
+                this._dataContext = null;
+                this._super();
+            }
+        },
+        {
+            templateID:{
+                set:function (v) {
+                    this.updateTemplate(v);
+                },
+                get:function () {
+                    if (!this._template)
+                        return null;
+                    return this._template.templateID;
+                }
+            },
+            template:{
+                get:function () {
+                    return this._template;
+                }
+            },
+            dataContext:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataContext !== v) {
+                        this._dataContext = v;
+                        if (!!this._template)
+                            this._template.dataContext = this._dataContext;
+                    }
+                },
+                get:function () {
+                    return this._dataContext;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.DynaContentElView = obj;
+            app.registerType('DynaContentElView',obj);
+            app.registerElView(global.consts.ELVIEW_NM.DYNACONT, obj);
+        });
 };
 
 RIAPP.Application._coreModules.content = function (app) {
     var thisModule = this, global = app.global, utils = global.utils;
     var Binding = app.modules.binding.Binding,
-        baseContentMod = app.modules.baseContent, baseElViewMod = app.modules.baseElView, elviewMod = app.modules.elview,
+        baseContentMod = app.modules.baseContent, elviewMod = app.modules.elview,
         DATA_TYPE = global.consts.DATA_TYPE, KEYS = global.consts.KEYS;
 
     var BindingContent = baseContentMod.BindingContent;
@@ -15287,7 +15317,7 @@ RIAPP.Application._coreModules.content = function (app) {
                 elView = this.app._getElView(el);
                 if (!!elView) //view already created for this element
                     return elView;
-                elView = elviewMod.SelectElView.create(el, options || {});
+                elView = this.app.getType('SelectElView').create(el, options || {});
                 return elView;
             },
             _updateTextValue:function () {
@@ -15413,7 +15443,7 @@ RIAPP.Application._coreModules.content = function (app) {
                 }
             }
         }
-        , function (obj) {
+        ,function (obj) {
             thisModule.LookupContent = obj;
         });
 

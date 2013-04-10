@@ -57,3 +57,20 @@ in between the object can be destroyed.
 without reloading whole page, therefore effectively preserving state between views switches. 
 
 docs will be updated shortly. At present GridDemo has a lot of comments to track new features.
+
+VERSION 1.2.2:
+
+1) Code optimization.
+
+2) Two unnoticed bugs were fixed (in utils.check_is methods - for Object and Regexp)
+
+3) utils.cloneObj modified.
+
+4) Element views definitions for DataForm,DataGrid,Pager,StackPanel, Select moved to the respective
+modules for the controls which they wrap.
+
+5) Now application instance has loadTemplates method, which is preferable to global.loadTemplates,
+because these templates are scoped to the aplication's instance, and each application's instance can have
+its own loaded (as a group) templates. 
+
+docs will be updated shortly. At present Demos updated to reflect changes.

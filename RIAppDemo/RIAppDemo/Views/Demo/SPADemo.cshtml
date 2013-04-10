@@ -129,9 +129,6 @@
         }; //end fn_Main
          
     RIAPP.global.addHandler('load', function (sender, args) {
-          //we load templates from the server
-           RIAPP.global.loadTemplates('@Url.Action("SPADemoTemplate", "Templates")');
-           
             //create ria application
            var app = RIAPP.Application.create({ app_name: 'default',
                 service_url: '@Url.RouteUrl("Default",new {controller="RIAppDemoService", action=""})',
@@ -169,6 +166,9 @@
                 }
 
             });
+
+           //we load templates from the server
+            app.loadTemplates('@Url.Action("SPADemoTemplate", "Templates")');
 
             app.startUp(RIAPP.global.UC.fn_Main);
         });
