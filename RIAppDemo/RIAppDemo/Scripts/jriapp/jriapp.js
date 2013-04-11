@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.3",
+        version:"1.2.3.1",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -1228,9 +1228,44 @@ RIAPP.Global._coreModules.utils = function (global) {
         }
     };
 
+    var validation = {
+        checkNumRange:function (num, range) {
+            var rangeParts = range.split(',');
+            if (!!rangeParts[0]) {
+                if (num < parseFloat(rangeParts[0])) {
+                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, num, range));
+                }
+            }
+            if (!!rangeParts[1]) {
+                if (num > parseFloat(rangeParts[1])) {
+                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, num, range));
+                }
+            }
+        },
+        _dtRangeToDate:function (str) {
+            var dtParts = str.split('-');
+            var dt = new Date(parseInt(dtParts[0], 10), parseInt(dtParts[1], 10) - 1, dtParts[2]);
+            return dt;
+        },
+        checkDateRange:function (dt, range) {
+            var rangeParts = range.split(',');
+            if (!!rangeParts[0]) {
+                if (dt < validation._dtRangeToDate(rangeParts[0])) {
+                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, dt, range));
+                }
+            }
+            if (!!rangeParts[1]) {
+                if (dt > validation._dtRangeToDate(rangeParts[1])) {
+                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, dt, range));
+                }
+            }
+        }
+    };
+
     var utils = {
         str:strings,
         check_is: check_is,
+        validation: validation,
         getNewID:function () {
             var id = _newID;
             _newID += 1;
@@ -1290,28 +1325,12 @@ RIAPP.Global._coreModules.utils = function (global) {
         performAjaxGet:function(url){
            return global.$.get(url);
         },
-        format:function () {
-            var args = Array.prototype.slice.call(arguments);
-            return base_utils.format.apply(base_utils, args);
-        },
-        normalizeURL:function (url) {
-            var win = global.window;
-            if (url.slice(0, 1) == '/') {
-                url = win.location.protocol + '//' + win.location.host + url;
-            } else if ((url.slice(0, 5) == 'http:') || (url.slice(0, 6) == 'https:')) {
-            } else {
-                url = win.location.href + '/' + url;
-            }
-            return url;
-        },
+        format: base_utils.format,
         extend:function (deep, defaults, options) {
             if (deep)
                 return utils.cloneObj(options, defaults);
             else
                 return utils.mergeObj(options, defaults);
-        },
-        getElementById:function (id) {
-            return global.document.getElementById(id);
         },
         removeNode:function (node) {
             if (!node)
@@ -1369,37 +1388,6 @@ RIAPP.Global._coreModules.utils = function (global) {
                 $el.qtip(options);
             }
         },
-        checkNumRange:function (num, range) {
-            var rangeParts = range.split(',');
-            if (!!rangeParts[0]) {
-                if (num < parseFloat(rangeParts[0])) {
-                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, num, range));
-                }
-            }
-            if (!!rangeParts[1]) {
-                if (num > parseFloat(rangeParts[1])) {
-                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, num, range));
-                }
-            }
-        },
-        dtRangeToDate:function (str) {
-            var dtParts = str.split('-');
-            var dt = new Date(parseInt(dtParts[0], 10), parseInt(dtParts[1], 10) - 1, dtParts[2]);
-            return dt;
-        },
-        checkDateRange:function (dt, range) {
-            var rangeParts = range.split(',');
-            if (!!rangeParts[0]) {
-                if (dt < utils.dtRangeToDate(rangeParts[0])) {
-                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, dt, range));
-                }
-            }
-            if (!!rangeParts[1]) {
-                if (dt > utils.dtRangeToDate(rangeParts[1])) {
-                    throw new Error(String.format(RIAPP.ERRS.ERR_FIELD_RANGE, dt, range));
-                }
-            }
-        },
         hasProp:function (obj, prop) {
             if (!obj)
                 return false;
@@ -1434,12 +1422,11 @@ RIAPP.Global._coreModules.utils = function (global) {
             else if (check_is.SimpleObject(o)){
                 //clone only simple objects
                 c = mergeIntoObj || {};
-                var p, v, keys = Object.getOwnPropertyNames(o);
+                var p, keys = Object.getOwnPropertyNames(o);
                 len = keys.length;
                 for (i = 0; i < len; i += 1) {
                     p = keys[i];
-                    v = o[p];
-                    c[p] = utils.cloneObj(v, null);
+                    c[p] = utils.cloneObj(o[p], null);
                 }
             }
             else
@@ -4582,7 +4569,7 @@ RIAPP.Application._coreModules.collection = function (app) {
                         if (!utils.check_is.Number(val))
                             throw new Error(String.format(ERRS.ERR_FIELD_WRONG_TYPE, val, 'Number'));
                         if (!!fieldInfo.range) {
-                            utils.checkNumRange(Number(val), fieldInfo.range);
+                            utils.validation.checkNumRange(Number(val), fieldInfo.range);
                         }
                         break;
                     case DATA_TYPE.DateTime:
@@ -4590,7 +4577,7 @@ RIAPP.Application._coreModules.collection = function (app) {
                         if (!utils.check_is.Date(val))
                             throw new Error(String.format(ERRS.ERR_FIELD_WRONG_TYPE, val, 'Date'));
                         if (!!fieldInfo.range) {
-                            utils.checkDateRange(val, fieldInfo.range);
+                            utils.validation.checkDateRange(val, fieldInfo.range);
                         }
                         break;
                     case DATA_TYPE.Time:
