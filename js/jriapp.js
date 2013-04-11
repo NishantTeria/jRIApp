@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.2",
+        version:"1.2.3",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -1107,7 +1107,130 @@ RIAPP.Global._coreModules.defaults = function (global) {
 RIAPP.Global._coreModules.utils = function (global) {
     var thisModule = this, base_utils = RIAPP.utils, _newID = 0;
 
+    var check_is = {
+        Null:function (a) {
+            return a === null;
+        },
+        Undefined:function (a) {
+            return a === undefined;
+        },
+        //checking for null type
+        nt:function (a) {
+            return (a === null || a === undefined);
+        },
+        Function:base_utils.isFunc,
+        String:function (a) {
+            if (check_is.nt(a)) return false;
+            var rx = /string/i;
+            return (typeof (a) === 'string') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
+        },
+        Array:base_utils.isArray,
+        Boolean:function (a) {
+            if (check_is.nt(a)) return false;
+            var rx = /boolean/i;
+            return (typeof (a) === 'boolean') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
+        },
+        Date:function (a) {
+            if (check_is.nt(a)) return false;
+            var rx = /date/i;
+            return (typeof (a) === 'date') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
+        },
+        HTML:function (a) {
+            if (check_is.nt(a)) return false;
+            var rx = /html/i;
+            return (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
+        },
+        Number:function (a) {
+            if (check_is.nt(a)) return false;
+            var rx = /Number/;
+            return (typeof (a) === 'number') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
+        },
+        Object:function (a) {
+            if (check_is.nt(a)) return false;
+            var rx = /object/i;
+            return (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
+        },
+        SimpleObject:function (a) {
+            if (check_is.nt(a)) return false;
+            var res = check_is.Object(a);
+            return res && (Object.prototype === Object.getPrototypeOf(a));
+        },
+        RegExp:function (a) {
+            if (check_is.nt(a)) return false;
+            var rx = /regexp/i;
+            return (typeof (a) === 'function') ? rx.test(a.constructor.toString()) : false;
+        },
+        Numeric:function (obj) {
+            return check_is.Number(obj) || (check_is.String(obj) && !isNaN(Number(obj)) );
+        },
+        BoolString:function (a) {
+            if (check_is.nt(a)) return false;
+            return (a == 'true' || a == 'false');
+        }
+    };
+
+    var strings = {
+        endsWith:base_utils.endsWith,
+        startsWith:base_utils.startsWith,
+        trim:base_utils.trim,
+        /**
+         *    Usage:     formatNumber(123456.789, 2, '.', ',');
+         *    result:    123,456.79
+         **/
+        formatNumber:function (number, decimals, dec_point, thousands_sep) {
+            number = (number + '').replace(/[^0-9+-Ee.]/g, '');
+            var n = !isFinite(+number) ? 0 : +number,
+                prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+                sep = (thousands_sep === undefined) ? ',' : thousands_sep,
+                dec = (dec_point === undefined) ? '.' : dec_point,
+                s = '',
+            // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+                toFixedFix = function (n, prec) {
+                    var k = Math.pow(10, prec);
+                    return '' + Math.round(n * k) / k;
+                };
+
+            if (utils.check_is.nt(decimals)) {
+                s = ('' + n).split('.');
+                prec = 2;
+            }
+            else
+                s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+
+            var i, s0 = '', len = s[0].length;
+            if (len > 3) {
+                for (i = 0; i < len; i += 1) {
+                    s0 = s0 + s[0].charAt(i);
+                    if (i < (len - 1) && (len - i - 1) % 3 === 0)
+                        s0 = s0 + sep;
+                }
+                s[0] = s0;
+            }
+            if ((s[1] || '').length < prec) {
+                s[1] = s[1] || '';
+                s[1] += new Array(prec - s[1].length + 1).join('0');
+            }
+            return s.join(dec);
+        },
+        stripNonNumeric:function (str) {
+            str += '';
+            var rgx = /^\d|\.|-$/;
+            var out = '';
+            for (var i = 0; i < str.length; i++) {
+                if (rgx.test(str.charAt(i))) {
+                    if (!( ( str.charAt(i) == '.' && out.indexOf('.') != -1 ) ||
+                        ( str.charAt(i) == '-' && out.length != 0 ) )) {
+                        out += str.charAt(i);
+                    }
+                }
+            }
+            return out;
+        }
+    };
+
     var utils = {
+        str:strings,
+        check_is: check_is,
         getNewID:function () {
             var id = _newID;
             _newID += 1;
@@ -1166,62 +1289,6 @@ RIAPP.Global._coreModules.utils = function (global) {
         },
         performAjaxGet:function(url){
            return global.$.get(url);
-        },
-        check_is:{
-            Null:function (a) {
-                return a === null;
-            },
-            Undefined:function (a) {
-                return a === undefined;
-            },
-            //checking for null type
-            nt:function (a) {
-                return (a === null || a === undefined);
-            },
-            Function:base_utils.isFunc,
-            String:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                var rx = /string/i;
-                return (typeof (a) === 'string') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
-            },
-            Array:base_utils.isArray,
-            Boolean:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                var rx = /boolean/i;
-                return (typeof (a) === 'boolean') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
-            },
-            Date:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                var rx = /date/i;
-                return (typeof (a) === 'date') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
-            },
-            HTML:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                var rx = /html/i;
-                return (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
-            },
-            Number:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                var rx = /Number/;
-                return (typeof (a) === 'number') ? true : (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
-            },
-            Object:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                var rx = /object/i;
-                return (typeof (a) === 'object') ? rx.test(a.constructor.toString()) : false;
-            },
-            RegExp:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                var rx = /regexp/i;
-                return (typeof (a) === 'function') ? rx.test(a.constructor.toString()) : false;
-            },
-            Numeric:function (obj) {
-                return utils.check_is.Number(obj) || (utils.check_is.String(obj) && !isNaN(Number(obj)) );
-            },
-            BoolString:function (a) {
-                if (utils.check_is.nt(a)) return false;
-                return (a == 'true' || a == 'false');
-            }
         },
         format:function () {
             var args = Array.prototype.slice.call(arguments);
@@ -1357,14 +1424,15 @@ RIAPP.Global._coreModules.utils = function (global) {
                 return o;
             }
 
-            if (utils.check_is.Array(o)){
+            if (check_is.Array(o)){
                 len = o.length;
                 c = new Array(len);
                 for (i = 0; i < len; i += 1) {
                     c[i] = utils.cloneObj(o[i], null);
                 }
             }
-            else if (utils.check_is.Object(o)){
+            else if (check_is.SimpleObject(o)){
+                //clone only simple objects
                 c = mergeIntoObj || {};
                 var p, v, keys = Object.getOwnPropertyNames(o);
                 len = keys.length;
@@ -1376,8 +1444,10 @@ RIAPP.Global._coreModules.utils = function (global) {
             }
             else
                 return o;
-
             return c;
+        },
+        shallowCopy:function (o) {
+            return utils.mergeObj(o,{});
         },
         mergeObj: function(obj, mergeIntoObj){
             if (!mergeIntoObj){
@@ -1401,6 +1471,12 @@ RIAPP.Global._coreModules.utils = function (global) {
         },
         insertIntoArray:function(array,obj,pos){
             array.splice(pos, 0, obj);
+        },
+        destroyJQueryPlugin: function($el,name){
+            var plugin = $el.data(name);
+            if (!!plugin){
+                $el[name]('destroy');
+            }
         },
         /*
          * Generate a random uuid.
@@ -1459,71 +1535,6 @@ RIAPP.Global._coreModules.utils = function (global) {
             };
         })()
     };
-    var strings = {
-        endsWith:function (str, suffix) {
-            return base_utils.endsWith(str, suffix);
-        },
-        startsWith:function (str, prefix) {
-            return base_utils.startsWith(str, prefix);
-        },
-        trim:function (str, chars) {
-            return base_utils.trim(str, chars);
-        },
-        /**
-         *    Usage:     formatNumber(123456.789, 2, '.', ',');
-         *    result:    123,456.79
-         **/
-        formatNumber:function (number, decimals, dec_point, thousands_sep) {
-            number = (number + '').replace(/[^0-9+-Ee.]/g, '');
-            var n = !isFinite(+number) ? 0 : +number,
-                prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
-                sep = (thousands_sep === undefined) ? ',' : thousands_sep,
-                dec = (dec_point === undefined) ? '.' : dec_point,
-                s = '',
-            // Fix for IE parseFloat(0.55).toFixed(0) = 0;
-                toFixedFix = function (n, prec) {
-                    var k = Math.pow(10, prec);
-                    return '' + Math.round(n * k) / k;
-                };
-
-            if (utils.check_is.nt(decimals)) {
-                s = ('' + n).split('.');
-                prec = 2;
-            }
-            else
-                s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
-
-            var i, s0 = '', len = s[0].length;
-            if (len > 3) {
-                for (i = 0; i < len; i += 1) {
-                    s0 = s0 + s[0].charAt(i);
-                    if (i < (len - 1) && (len - i - 1) % 3 === 0)
-                        s0 = s0 + sep;
-                }
-                s[0] = s0;
-            }
-            if ((s[1] || '').length < prec) {
-                s[1] = s[1] || '';
-                s[1] += new Array(prec - s[1].length + 1).join('0');
-            }
-            return s.join(dec);
-        },
-        stripNonNumeric:function (str) {
-            str += '';
-            var rgx = /^\d|\.|-$/;
-            var out = '';
-            for (var i = 0; i < str.length; i++) {
-                if (rgx.test(str.charAt(i))) {
-                    if (!( ( str.charAt(i) == '.' && out.indexOf('.') != -1 ) ||
-                        ( str.charAt(i) == '-' && out.length != 0 ) )) {
-                        out += str.charAt(i);
-                    }
-                }
-            }
-            return out;
-        }
-    };
-    utils.str = strings;
 
     //LifeTimeScope used to hold references to objects and destroys them all when LifeTimeScope is destroyed itself
     var LifeTimeScope = RIAPP.BaseObject.extend({
@@ -1620,7 +1631,7 @@ RIAPP.Global._coreModules.utils = function (global) {
             this._queue = {}
         },
         _checkQueue:function (prop, value) {
-            if (!this._owner) {
+            if (!this._owner || this._owner._isDestroyCalled) {
                 return;
             }
             var self = this, propQueue = this._queue[prop], task;
@@ -1637,18 +1648,18 @@ RIAPP.Global._coreModules.utils = function (global) {
                         firstWins = task;
                         break;
                     }
-                    else if (!!task.group) {
+                    else if (!!task.group) { //the task in the group of tasks
                         if (!groups.group) {
                             groups.group = task.group;
                         }
-                        if (groups.group == task.group) {
-                            groups.arr.push(task);
+                        if (groups.group === task.group) {
+                            groups.arr.push(task); //if the task in the same group, add it to the array
                         }
                     }
                 }
             }
 
-            if (!!firstWins) {
+            if (!!firstWins) { //the first task will be executed, in normal queued order, the rest tasks are waiting
                 found.push(firstWins);
                 forRemoval.push(firstWins);
             }
@@ -1659,12 +1670,12 @@ RIAPP.Global._coreModules.utils = function (global) {
                         firstWins = task;
                     }
 
-                    if (firstWins.lastWins) {
+                    if (firstWins.lastWins) { //the last task wins, the rest is ignored
                         if (found.length == 0)
-                            found.push(task);
+                            found.push(task); //add only the last task, the rest just remove from queue
                     }
                     else
-                        found.push(task);
+                        found.push(task); //add all tasks in the group, they will be executed all
                     forRemoval.push(task);
                 }
             }
@@ -2115,7 +2126,7 @@ RIAPP.Global._coreModules.riapp = function (global) {
                     op.templateInfo = op.template;
                     delete op.template;
                 }
-                return utils.extend(true, defaultOp, op);
+                return utils.extend(false, defaultOp, op);
             },
             _destroyBindings:function () {
                 if (!!this._lftmBind) {
@@ -2203,28 +2214,6 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 return res;
             },
             bind:function (opts) {
-                var BINDING_MODE = this.modules.binding.BINDING_MODE;
-                opts = utils.extend(false, {target:null, source:null,
-                    targetPath:null, sourcePath:null, mode:BINDING_MODE[1],
-                    converter:null, converterParam:null, isSourceFixed:false
-                }, opts);
-
-                if (!opts.target) {
-                    throw new Error(RIAPP.ERRS.ERR_BIND_TARGET_EMPTY);
-                }
-
-                if (!utils.check_is.String(opts.targetPath)) {
-                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_BIND_TGTPATH_INVALID, opts.targetPath));
-                }
-
-                if (BINDING_MODE.indexOf(opts.mode) < 0){
-                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_BIND_MODE_INVALID, opts.mode));
-                }
-
-                if (!RIAPP.BaseObject.isPrototypeOf(opts.target)) {
-                    throw new Error(RIAPP.ERRS.ERR_BIND_TARGET_INVALID);
-                }
-
                 return this.getType('Binding').create(opts);
             },
             //set up application - use fn_sandbox callback to setUp handlers on objects, create viewModels and etc.
@@ -3192,7 +3181,27 @@ RIAPP.Application._coreModules.binding = function (app) {
             _app:app,
             _create:function (options) {
                 this._super();
-                var opts = options;
+                var opts = utils.extend(false, {target:null, source:null,
+                    targetPath:null, sourcePath:null, mode:BINDING_MODE[1],
+                    converter:null, converterParam:null, isSourceFixed:false
+                }, options);
+
+                if (!opts.target) {
+                    throw new Error(RIAPP.ERRS.ERR_BIND_TARGET_EMPTY);
+                }
+
+                if (!utils.check_is.String(opts.targetPath)) {
+                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_BIND_TGTPATH_INVALID, opts.targetPath));
+                }
+
+                if (BINDING_MODE.indexOf(opts.mode) < 0){
+                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_BIND_MODE_INVALID, opts.mode));
+                }
+
+                if (!RIAPP.BaseObject.isPrototypeOf(opts.target)) {
+                    throw new Error(RIAPP.ERRS.ERR_BIND_TARGET_INVALID);
+                }
+
                 this._state = null; //save state - source and target when binding is disabled
                 this._mode = opts.mode;
                 this._converter = opts.converter || this._app.getConverter('BaseConverter');
@@ -3796,7 +3805,7 @@ RIAPP.Application._coreModules.template = function (app) {
                 }
 
                 if (!!this._el) {
-                    global.$(this._el).remove();
+                    global.$(this._el).remove(); //remove with jQuery method to ensure proper cleanUp
                 }
                 this._el = null;
             }
@@ -4094,7 +4103,7 @@ RIAPP.Application._coreModules.baseContent = function (app) {
                     this._lfScope = null;
                 }
                 if (!!this._el) {
-                    utils.removeNode(this._el);
+                    global.$(this._el).remove();
                     this._el = null;
                 }
                 this._tgt = null;
@@ -4463,7 +4472,7 @@ RIAPP.Application._coreModules.collection = function (app) {
                     }
                 }
                 this._isEditing = true;
-                this._saveVals = utils.cloneObj(this._vals);
+                this._saveVals = utils.shallowCopy(this._vals);
                 this._collection.currentItem = this;
                 return true;
             },
@@ -6472,7 +6481,7 @@ RIAPP.Application._coreModules.db = function (app) {
             },
             _fldChanging:function (fieldInfo, oldV, newV) {
                 if (!this._origVals) {
-                    this._origVals = utils.cloneObj(this._vals);
+                    this._origVals = utils.shallowCopy(this._vals);
                 }
                 return true;
             },
@@ -6589,7 +6598,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     }
                     this._origVals = null;
                     if (!!this._saveVals)
-                        this._saveVals = utils.cloneObj(this._vals);
+                        this._saveVals = utils.shallowCopy(this._vals);
                     this._changeType = CHANGE_TYPE.NONE;
                     eset._removeAllErrors(this);
                     if (!!rowInfo)
@@ -6611,10 +6620,10 @@ RIAPP.Application._coreModules.db = function (app) {
 
                     var changes = this._getStrValues(true);
                     if (!!this._origVals) {
-                        this._vals = utils.cloneObj(this._origVals);
+                        this._vals = utils.shallowCopy(this._origVals);
                         this._origVals = null;
                         if (!!this._saveVals) {
-                            this._saveVals = utils.cloneObj(this._vals);
+                            this._saveVals = utils.shallowCopy(this._vals);
                         }
                     }
                     this._changeType = CHANGE_TYPE.NONE;
@@ -10423,7 +10432,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                     if (!grid._isClearing) {
                         grid._removeRow(this);
                         if (!!this._el) {
-                            utils.removeNode(this._el);
+                            global.$(this._el).remove();
                         }
                     }
                 }
@@ -10607,12 +10616,11 @@ RIAPP.Application._coreModules.datagrid = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                
-                utils.removeNode(this.el);
                 if (!!this._cell) {
                     this._cell.destroy();
                     this._cell = null;
                 }
+                global.$(this._el).remove();
                 this._item = null;
                 this._el = null;
                 this._grid = null;
@@ -10622,7 +10630,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 var self = this;
                 this._item = null;
                 this._cell.item = null;
-                utils.removeNode(this.el);
+                utils.removeNode(this.el); //don't use global.$(this._el).remove() here
                 if (!row || row._isDestroyCalled){
                     this._parentRow = null;
                     return;
@@ -11128,7 +11136,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 }, options;
                 var temp_opts = this._app.parser.parseOptions(column_attr);
                 if (temp_opts.length > 0)
-                    options = utils.extend(true, defaultOp, temp_opts[0]);
+                    options = utils.extend(false, defaultOp, temp_opts[0]);
                 else
                     options = defaultOp;
 
@@ -13479,7 +13487,7 @@ RIAPP.Application._coreModules.dataform = function (app) {
         Binding = app.modules.binding.Binding,  BaseElView = app.modules.baseElView.BaseElView,
         _css = {
         dataform:'ria-dataform'
-    };
+        }, ERRTEXT = RIAPP.localizable.VALIDATE;
     Object.freeze(_css);
     thisModule.css = _css;
 
@@ -14214,10 +14222,6 @@ RIAPP.Application._coreModules.elview = function (app) {
                         $el.unwrap();
                 }
             },
-            destroy:function () {
-                this.$el.off('.' + this._objId);
-                this._super();
-            },
             toString:function () {
                 return 'RadioElView';
             }
@@ -14874,12 +14878,12 @@ RIAPP.Application._coreModules.elview = function (app) {
                         self.invokeTabsEvent("load", tab);
                     }
                 };
-                tabOpts = utils.extend(true, tabOpts, self._tabOpts);
+                tabOpts = utils.extend(false, tabOpts, self._tabOpts);
                 $el.tabs(tabOpts);
             },
             _destroyTabs:function () {
                 var $el = this.$el;
-                $el.tabs('destroy');
+                utils.destroyJQueryPlugin($el,'tabs');
             },
             invokeTabsEvent:function (eventName, args) {
                 var self = this, data = {eventName:eventName, args:args};
@@ -14888,7 +14892,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                 }
             },
             destroy:function () {
-                if (!this._tabsEventCommand)
+                if (this._isDestroyed)
                     return;
                 this._tabsEventCommand = null;
                 this._destroyTabs();
@@ -14936,17 +14940,20 @@ RIAPP.Application._coreModules.elview = function (app) {
             },
             updateTemplate: function(name){
                 var self = this;
-                try
-                {
-                    if (!name){
-                        if (!!this._template){
-                            this._template.destroy();
-                            this._template = null;
-                            self._templateChanged();
-                        }
+                try{
+                    if (!name && !!this._template){
+                        this._template.destroy();
+                        this._template = null;
+                        self._templateChanged();
                         return;
                     }
-                    if (!this._template){
+                }catch(ex){
+                    this._onError(ex,this);
+                    global._throwDummy(ex);
+                }
+
+                try{
+                   if (!this._template){
                         this._template = this._app.getType('Template').create(name);
                         this._template.dataContext = this._dataContext;
                         this._template.addOnPropertyChange('templateID',function(s,a){
@@ -14955,6 +14962,7 @@ RIAPP.Application._coreModules.elview = function (app) {
                         self._templateChanged();
                         return;
                     }
+
                     this._template.templateID = name;
                 }catch(ex){
                     this._onError(ex,this);
@@ -15032,7 +15040,7 @@ RIAPP.Application._coreModules.content = function (app) {
                 var $el = global.$(el);
                 $el.datepicker();
                 this._fn_cleanup = function () {
-                    $el.datepicker('destroy');
+                    utils.destroyJQueryPlugin($el,'datepicker');
                 };
             }
             return el;
@@ -15367,7 +15375,7 @@ RIAPP.Application._coreModules.content = function (app) {
             },
             _cleanUp:function () {
                 if (!!this._el) {
-                    utils.removeNode(this._el);
+                    global.$(this._el).remove();
                     this._el = null;
                 }
                 if (!!this._listBinding) {

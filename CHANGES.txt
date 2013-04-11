@@ -73,4 +73,8 @@ modules for the controls which they wrap.
 because these templates are scoped to the aplication's instance, and each application's instance can have
 its own loaded (as a group) templates. 
 
-docs will be updated shortly. At present Demos updated to reflect changes.
+VERSION 1.2.3:
+
+1) Code optimization.
+
+2) One Bug fix (introduced in version 1.2.2)
