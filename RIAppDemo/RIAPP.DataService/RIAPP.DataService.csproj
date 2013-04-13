@@ -56,11 +56,8 @@
     <Compile Include="DomainService\Security\SecurityHelper.cs" />
     <Compile Include="Utils\MetadataCache.cs" />
     <Compile Include="DomainService\Exceptions\ValidationException.cs" />
-    <Compile Include="DomainService\IShrededRequestManager.cs" />
     <Compile Include="DomainService\JSonTypes\Association.cs" />
     <Compile Include="DomainService\JSonTypes\ErrorInfo.cs" />
-    <Compile Include="DomainService\ShrededRequest.cs" />
-    <Compile Include="DomainService\ShrededRequestManager.cs" />
     <Compile Include="DomainService\Metadata.cs" />
     <Compile Include="Utils\ValueConverter.cs" />
     <Compile Include="Utils\ValidationHelper.cs" />

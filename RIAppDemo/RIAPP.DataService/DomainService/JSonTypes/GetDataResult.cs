@@ -116,21 +116,6 @@ namespace RIAPP.DataService
         }
 
         [DataMember]
-        public int chunksLeft
-        {
-            get;
-            set;
-        }
-
-
-        [DataMember]
-        public string chunksID
-        {
-            get;
-            set;
-        }
-
-        [DataMember]
         public object extraInfo
         {
             get;
@@ -144,6 +129,13 @@ namespace RIAPP.DataService
         /// </summary>
         [DataMember]
         public ErrorInfo error
+        {
+            get;
+            set;
+        }
+
+        [DataMember]
+        public int fetchSize
         {
             get;
             set;

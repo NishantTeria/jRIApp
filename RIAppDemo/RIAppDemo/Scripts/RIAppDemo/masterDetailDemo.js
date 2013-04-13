@@ -127,6 +127,7 @@ RIAPP.Application.registerModule('masterDetailDemo', function (app) {
             load: function () {
                 var query = this.dbSet.createQuery('ReadCustomer');
                 query.pageSize = 50;
+                query.loadPageCount = 10; //load ten pages at once -- 500 rows
                 query.params = { includeNav: true };
                 //load without filtering
                 query.orderBy('LastName', 'ASC').thenBy('MiddleName','ASC').thenBy('FirstName','ASC');

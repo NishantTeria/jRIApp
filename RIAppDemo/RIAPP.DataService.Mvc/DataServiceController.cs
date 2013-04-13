@@ -32,8 +32,7 @@ namespace RIAPP.DataService.Mvc
         [HttpPost]
         public ActionResult GetItems(GetDataInfo getInfo)
         {
-            var res = this.DomainService.ServiceGetData(getInfo);
-            return Json(res);
+            return new IncrementalResult(this.DomainService.ServiceGetData(getInfo));
         }
 
         [HttpPost]

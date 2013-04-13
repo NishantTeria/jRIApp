@@ -20,8 +20,7 @@ namespace RIAPP.DataService
         private static StaSynchronizationContext _synchronizer = new StaSynchronizationContext();
         private static MetadataCache _metadataCache = new MetadataCache();
         private static ConcurrentDictionary<Type, List<MethodDescription>> _tInvokesInfo = new ConcurrentDictionary<Type, List<MethodDescription>>();
-        private static IShrededRequestManager _shrededRequestManager = new ShrededRequestManager();
-
+        
         private ServiceMetadata _serviceMetadata;
         private ChangeSet _currentChangeSet;
         protected DbSet _currentDbSet;
@@ -724,31 +723,14 @@ namespace RIAPP.DataService
       
             QueryResult queryResult = null;
             int? totalCount = null;
-            if (!string.IsNullOrEmpty(getInfo.chunksID))
+            List<object> methParams = new List<object>();
+            methParams.Add(getInfo);
+            for (var i = 0; i < method.parameters.Count; ++i)
             {
-                //return request result in chunks
-                queryResult = BaseDomainService._shrededRequestManager.GetNextChunk(Guid.Parse(getInfo.chunksID));
-                if (queryResult == null)
-                {
-                    throw new DomainServiceException(ErrorStrings.ERR_CHUNK_NOT_FOUND);
-                }
+                methParams.Add(getInfo.paramInfo.GetValue(method.parameters[i].name, method));
             }
-            else
-            {
-                List<object> methParams = new List<object>();
-                methParams.Add(getInfo);
-                for (var i = 0; i < method.parameters.Count; ++i)
-                {
-                    methParams.Add(getInfo.paramInfo.GetValue(method.parameters[i].name, method));
-                }
-                queryResult = (QueryResult)method.methodInfo.Invoke(this, methParams.ToArray());
-                if (getInfo.dbSetInfo.FetchSize > 0)
-                {
-                    //shreds request result  into smaller chunks
-                    queryResult = BaseDomainService._shrededRequestManager.AddQueryResult(queryResult, getInfo.dbSetInfo.FetchSize);
-                }
-            }
-
+            queryResult = (QueryResult)method.methodInfo.Invoke(this, methParams.ToArray());
+    
             IEnumerable entities = (IEnumerable)queryResult.Result;
             totalCount = queryResult.TotalCount;
             int rowCnt = 0;
@@ -759,10 +741,6 @@ namespace RIAPP.DataService
                 ++rowCnt;
             }
             var rows = this.CreateRows(getInfo.dbSetInfo, entityList, rowCnt);
-            if (queryResult.includeNavigations.Length > 0 && isMultyPageRequest)
-            {
-                throw new DomainServiceException(ErrorStrings.ERR_MULTYPAGE_REQUEST);
-            }
             IEnumerable<IncludedResult> subResults = this.CreateIncludedResults(getInfo.dbSetInfo, entityList, queryResult.includeNavigations);
 
             GetDataResult res = new GetDataResult()
@@ -770,12 +748,11 @@ namespace RIAPP.DataService
                 pageIndex = getInfo.pageIndex,
                 pageCount = getInfo.pageCount,
                 dbSetName = getInfo.dbSetName,
-                names = string.IsNullOrEmpty(getInfo.chunksID) ? getInfo.dbSetInfo.fieldInfos.Where(f => f._isIncludeInResult).OrderBy(f => f._ordinal).Select(fi => fi.fieldName) : null,
+                names = getInfo.dbSetInfo.fieldInfos.Where(f => f._isIncludeInResult).OrderBy(f => f._ordinal).Select(fi => fi.fieldName),
                 totalCount = totalCount,
-                chunksLeft = queryResult.ChunksLeft,
-                chunksID = queryResult.ChunksID,
-                extraInfo = string.IsNullOrEmpty(getInfo.chunksID)?queryResult.extraInfo : null,
+                extraInfo = queryResult.extraInfo,
                 rows = rows,
+                fetchSize= getInfo.dbSetInfo.FetchSize,
                 included = subResults,
                 error = null
             };

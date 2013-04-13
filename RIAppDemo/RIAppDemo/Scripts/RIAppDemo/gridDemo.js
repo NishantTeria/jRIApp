@@ -424,7 +424,7 @@ RIAPP.Application.registerModule('gridDemo', function (app) {
                 //the query'service method can accept additional parameters which you can supply with query
                 var query = this.dbSet.createQuery('ReadProduct');
                 query.pageSize = 50;
-                query.loadPageCount = 10; //load ten pages at once (one will be visible, others in local cache)
+                query.loadPageCount = 20; //load 20 pages at once (only one will be visible, others will be in local cache)
                 query.isClearCacheOnEveryLoad = true; //clear local cache when a new batch of data is loaded from the server
                 addTextQuery(query,'ProductNumber',this._filter.prodNumber);
                 addTextQuery(query,'Name',this._filter.name);

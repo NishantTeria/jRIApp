@@ -73,14 +73,6 @@ namespace RIAPP.DataService
             get;
             set;
         }
-
-        [DataMember]
-        public string chunksID
-        {
-            get;
-            set;
-        }
-        
        
         [ScriptIgnore]
         [IgnoreDataMember]

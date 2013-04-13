@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.3.1",
+        version:"1.2.3.2",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -834,6 +834,7 @@ RIAPP.Global._coreModules.array_ext = function (global) {
 
 RIAPP.Global._coreModules.consts = function (global) {
     var thisModule = this, consts = {};
+    thisModule.CHUNK_SEP = '$&@';
     consts.DATA_ATTR = {
         EL_VIEW_KEY:'data-elvwkey',
         DATA_BIND:'data-bind',
@@ -1295,35 +1296,67 @@ RIAPP.Global._coreModules.utils = function (global) {
             return parseFloat(number.toFixed(decimals));
         },
         performAjaxCall:function (url, postData, async, fn_success, fn_error, context) {
-            var promise = global.$.ajax({
-                url:url,
-                type:'POST',
-                dataType:'json',
-                data:postData,
-                async:async,
-                timeout:global.defaults.ajaxTimeOut * 1000,
-                contentType:'application/json; charset=utf-8'
-            });
-            if (!!fn_success)
+            var req = new XMLHttpRequest(), mimeType='application/json; charset=utf-8';
+            req.open('POST', url, async);
+            var deferred = utils.createDeferred();
+            req.responseType = 'text';
+            req.onload = function(e) {
+                if (this.status == 200) {
+                    var res = this.response;
+                    deferred.resolve(res);
+                }
+            };
+            req.onerror = function(e){
+                deferred.reject(new Error(e.target.status));
+            };
+            req.ontimeout = function () {
+                deferred.reject(new Error("The request for " + url + " timed out."));
+            };
+            req.timeout = global.defaults.ajaxTimeOut * 1000;
+            req.setRequestHeader('Content-Type', mimeType);
+            req.send(postData);
+            var promise = deferred.promise();
+
+            if (!!fn_success){
                 promise.done(function(data){
-                    fn_success.call(context, data);
+                    var res = data.split(global.modules.consts.CHUNK_SEP);
+                    res = res.map(function(chunks){
+                        return JSON.parse(chunks);
+                    });
+                    if (res.length == 1)
+                        fn_success.call(context, res[0]);
+                    else
+                        fn_success.call(context, res);
                 });
+            }
+
             if (!!fn_error)
                 promise.fail(function(err){
-                    var er = 'Load Failed!';
-                    if (!!err && !!err.message){
-                        er = err.message;
-                    }
-                    else if (!!err &&!!err.responseText)
-                    {
-                        er = err.responseText;
-                    }
-                    fn_error.call(context, er);
+                    fn_error.call(context, err);
                 });
             return promise;
         },
         performAjaxGet:function(url){
-           return global.$.get(url);
+            var req = new XMLHttpRequest();
+            req.open('GET', url, true); /* always async mode */
+            var deferred = utils.createDeferred();
+            req.responseType = 'text';
+            req.onload = function(e) {
+                if (this.status == 200) {
+                    var res = this.response;
+                    deferred.resolve(res);
+                }
+            };
+            req.onerror = function(e){
+                deferred.reject(new Error(e.target.status));
+            };
+            req.ontimeout = function () {
+                deferred.reject(new Error("The request for " + url + " timed out."));
+            };
+            req.timeout = global.defaults.ajaxTimeOut * 1000;
+            req.send(null);
+            var promise = deferred.promise();
+            return promise;
         },
         format: base_utils.format,
         extend:function (deep, defaults, options) {
@@ -6977,11 +7010,17 @@ RIAPP.Application._coreModules.db = function (app) {
                 data = utils.extend(false, {
                     res:{names:[], rows:[], pageIndex:null, pageCount:null, dbSetName:this.dbSetName, totalCount:null},
                     isPageChanged:false,
-                    fn_beforeFillEnd:null
+                    fn_beforeFillEnd:null,
+                    restOfRows: []
                 }, data);
-                var res = data.res, fieldNames = res.names, rows = res.rows, rowCount = rows.length, entityType = this._entityType,
+                var self =this, res = data.res, fieldNames = res.names, rowsChunks = [], rowCount = 0, entityType = this._entityType,
                     newItems = [], positions = [], created_items = [], fetchedItems = [], isPagingEnabled = this.isPagingEnabled,
                     RM = REFRESH_MODE.RefreshCurrent, query = this.query, clearAll = true, dataCache;
+                rowsChunks.push(res.rows)
+                rowsChunks = rowsChunks.concat(data.restOfRows);
+                rowsChunks.forEach(function(chunk){
+                    rowCount+= chunk.length;
+                });
 
                 this._onFillStart({ isBegin:true, rowCount:rowCount, time:new Date(), isPageChanged:data.isPageChanged });
                 try {
@@ -6997,33 +7036,35 @@ RIAPP.Application._coreModules.db = function (app) {
                                 dataCache.totalCount = res.totalCount;
                         }
                     }
+                    rowsChunks.forEach(function(chunk){
+                        var items = chunk.map(function (row) {
+                            //row.key already string value generated on server (no need to convert to string)
+                            var key = row.key;
+                            if (!key)
+                                throw new Error(RIAPP.ERRS.ERR_KEY_IS_EMPTY);
 
-                    created_items = rows.map(function (row) {
-                        //row.key already string value generated on server (no need to convert to string)
-                        var key = row.key;
-                        if (!key)
-                            throw new Error(RIAPP.ERRS.ERR_KEY_IS_EMPTY);
-
-                        var item = this._itemsByKey[key];
-                        if (!item) {
-                            if (!!dataCache) {
-                                item = dataCache.getItemByKey(key);
+                            var item = self._itemsByKey[key];
+                            if (!item) {
+                                if (!!dataCache) {
+                                    item = dataCache.getItemByKey(key);
+                                }
+                                if (!item)
+                                    item = entityType.create(row, fieldNames);
+                                else {
+                                    row.values.forEach(function (val, index) {
+                                        item._refreshValue(val, fieldNames[index], RM);
+                                    });
+                                }
                             }
-                            if (!item)
-                                item = entityType.create(row, fieldNames);
                             else {
                                 row.values.forEach(function (val, index) {
                                     item._refreshValue(val, fieldNames[index], RM);
                                 });
                             }
-                        }
-                        else {
-                            row.values.forEach(function (val, index) {
-                                item._refreshValue(val, fieldNames[index], RM);
-                            });
-                        }
-                        return item;
-                    }, this);
+                            return item;
+                        });
+                        created_items = created_items.concat(items);
+                    });
 
                     if (!!query) {
                         if (query.isIncludeTotalCount && !utils.check_is.nt(res.totalCount)) {
@@ -7614,7 +7655,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     dbSet.fillItems(subset, true);
                 });
             },
-            _onLoaded:function (res, isPageChanged) {
+            _onLoaded:function (res, isPageChanged, restOfRows) {
                 var self = this, operType = DATA_OPER.LOAD, dbSetName, dbSet, methRes;
                 try {
                     if (!res)
@@ -7630,7 +7671,8 @@ RIAPP.Application._coreModules.db = function (app) {
                             isPageChanged:isPageChanged,
                             fn_beforeFillEnd:function () {
                                 self._loadIncluded(res);
-                            }
+                            },
+                            restOfRows: restOfRows
                         });
                 } catch (ex) {
                     if (global._checkIsDummy(ex)) {
@@ -7812,47 +7854,6 @@ RIAPP.Application._coreModules.db = function (app) {
                     this._onDataOperError(error, DATA_OPER.SUBMIT);
                 }
             },
-            _loadChunks:function (loadUrl, postData, prevRes, fn_onComplete) {
-                var self = this;
-
-                utils.performAjaxCall(
-                    loadUrl,
-                    postData,
-                    true,
-                    function (res) { //success
-                        try {
-                            thisModule.checkError(res.error, DATA_OPER.LOAD);
-                            var isMoreChunks = res.chunksID && res.chunksLeft > 0;
-                            prevRes.rows = prevRes.rows.concat(res.rows);
-                            res.rows = [];
-                            var hasIncluded = !!prevRes.included && prevRes.included.length > 0;
-                            //merge subset rows
-                            if (hasIncluded) {
-                                prevRes.included.forEach(function (subset) {
-                                    var newSubset = res.included.filter(function (subset2) {
-                                        return subset2.dbSetName == subset.dbSetName;
-                                    });
-                                    if (newSubset.length != 1)
-                                        return;
-                                    subset.rows = subset.rows.concat(newSubset[0].rows);
-                                });
-                            }
-
-                            if (isMoreChunks) {
-                                self._loadChunks(loadUrl, postData, prevRes, fn_onComplete);
-                            }
-                            else {
-                                fn_onComplete(prevRes, null);  //load ended without error
-                            }
-                        }
-                        catch (ex) {
-                            fn_onComplete(null, ex);
-                        }
-                    },
-                    function (er) { //error
-                        fn_onComplete(null, er);
-                    }, null);
-            },
             _beforeLoad:function (query, oldQuery, dbSet) {
                 if (query && oldQuery !== query) {
                     dbSet._query = query;
@@ -7960,8 +7961,7 @@ RIAPP.Application._coreModules.db = function (app) {
                                 filterInfo:query.filterInfo,
                                 sortInfo:query.sortInfo,
                                 paramInfo:self._getMethodParams(query._queryInfo, query.params).paramInfo,
-                                queryName:query.queryName,
-                                chunksID:null
+                                queryName:query.queryName
                             };
 
                             postData = JSON.stringify(requestInfo);
@@ -7970,30 +7970,18 @@ RIAPP.Application._coreModules.db = function (app) {
                                 postData,
                                 true,
                                 function (res) { //success
+                                    var  restOfRows = [], getDataResult;
                                     try {
-                                        var isMoreChunks = !!res.chunksID && res.chunksLeft > 0;
-                                        if (isMoreChunks) {
-                                            requestInfo.chunksID = res.chunksID;
-                                            requestInfo.filterInfo = null;
-                                            requestInfo.sortInfo = null;
-                                            requestInfo.paramInfo = null;
-                                            postData = JSON.stringify(requestInfo);
-                                            self._loadChunks(loadUrl, postData, res, function (res, er) {
-                                                if (!er) {
-                                                    loadRes = self._onLoaded(res, isPageChanged);
-                                                    loadRes.outOfBandData = res.extraInfo;
-                                                    fn_onOK(loadRes);
-                                                }
-                                                else {
-                                                    fn_onErr2(er);
-                                                }
-                                            });
+                                        //if this is array then the first item is getDataResult
+                                        //the other items are rows arrays
+                                        if (utils.check_is.Array(res)){
+                                            getDataResult = res[0];//first item is GetDataResult
+                                            restOfRows = res.slice(1); //the rest is array[1..n] of rows[]
+                                            res = getDataResult;
                                         }
-                                        else {
-                                            loadRes = self._onLoaded(res, isPageChanged);
-                                            loadRes.outOfBandData = res.extraInfo;
-                                            fn_onOK(loadRes);
-                                        }
+                                        loadRes = self._onLoaded(res, isPageChanged, restOfRows);
+                                        loadRes.outOfBandData = res.extraInfo;
+                                        fn_onOK(loadRes);
                                     }
                                     catch (ex) {
                                         fn_onErr(ex);
