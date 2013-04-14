@@ -12,81 +12,38 @@ namespace RIAPP.DataService.Mvc
 
     public class IncrementalResult : ActionResult
     {
-        private const string CHUNKS_SEPARATOR = "$&@";
-
-        private class ChunkResult
-        {
-            private int _chunkSize = 500;
-            private Queue<IEnumerable<Row>> _queue = new Queue<IEnumerable<Row>>();
-            private int _chunkCount = 0;
-
-            public ChunkResult(GetDataResult queryResult, int? chunkSize)
-            {
-                var res = queryResult;
-                if (chunkSize.HasValue)
-                {
-                    this._chunkSize = chunkSize.Value;
-                }
-                int offset = -1;
-                Row[] chunk = null;
-                foreach (var item in queryResult.rows)
-                {
-                    ++offset;
-                    if (offset == this._chunkSize)
-                    {
-                        offset = 0;
-                        this._queue.Enqueue(chunk);
-                        chunk = null;
-                        this._chunkCount += 1;
-                    }
-                    if (chunk == null)
-                    {
-                        chunk = new Row[this._chunkSize];
-                    }
-                    chunk[offset] = item;
-                }
-
-                if (chunk != null)
-                {
-                    Row[] chunk2 = new Row[offset + 1];
-                    Array.Copy(chunk, chunk2, offset + 1);
-                    this._queue.Enqueue(chunk2);
-                    this._chunkCount += 1;
-                }
-            }
-
-
-            internal IEnumerable<Row> CurrentChunk
-            {
-                get
-                {
-                    if (this._chunkCount <= 0)
-                    {
-                        return new Row[0];
-                    }
-                    else
-                    {
-                        this._chunkCount -= 1;
-                        return this._queue.Dequeue();
-                    }
-                }
-            }
-
-            public int ChunkCount
-            {
-                get
-                {
-                    return this._chunkCount;
-                }
-            }
-
-        }
+        private const string SEPARATOR = "$&@";
 
         public IncrementalResult(GetDataResult res) {
             this.Data = res;
         }
 
         public GetDataResult Data { get; set; }
+
+        private string RowToJSON(Row row) { 
+            StringBuilder sb = new StringBuilder();
+            sb.Append("{");
+            sb.AppendFormat(@"""key"":""{0}"",""values"":[", row.key);
+            int i = 0;
+            Array.ForEach<string>(row.values,(s)=>{
+                if (i > 0)
+                    sb.Append(",");
+                if (s == null)
+                {
+                    sb.Append("null");
+                }
+                else
+                {
+                    string v = System.Web.HttpUtility.JavaScriptStringEncode(s);
+                    sb.Append(@"""");
+                    sb.Append(v);
+                    sb.Append(@"""");
+                }
+                i += 1;
+            });
+            sb.Append("]}");
+            return sb.ToString();
+        }
 
         public override void ExecuteResult(ControllerContext context)
         {
@@ -99,43 +56,34 @@ namespace RIAPP.DataService.Mvc
             //context.HttpContext.Response.IsClientConnected
             var writer = context.HttpContext.Response.Output;
             System.Web.Script.Serialization.JavaScriptSerializer serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
-            if (this.Data.error != null)
+            if (this.Data.error != null || this.Data.rows == null)
             {
                 writer.Write(serializer.Serialize(this.Data));
                 writer.Flush();
-                response.Flush();
-                return;
-            }
-            var chunkResult = new ChunkResult(this.Data, this.Data.fetchSize > 0 ? (int?)this.Data.fetchSize : (int?)null);
-
-            if (chunkResult.ChunkCount <= 0)
-            {
-                writer.Write(serializer.Serialize(this.Data));
-                writer.Flush();
-                response.Flush();
+                response.End();
                 return;
             }
 
+            var allRows = this.Data.rows;
+            this.Data.rows = new Row[0];
+            writer.Write(serializer.Serialize(this.Data));
+            writer.Write(SEPARATOR);
+            writer.Write("[");
+            int fetchSize = this.Data.fetchSize==0 ? 500: this.Data.fetchSize;
             int i = 0;
-            while (chunkResult.ChunkCount > 0)
+            foreach (var row in allRows)
             {
-                string res = null;
-                if (i == 0)
-                {
-                    this.Data.rows = chunkResult.CurrentChunk;
-                    res = serializer.Serialize(this.Data);
-                    writer.Write(res);
+                if (i > 0) { writer.Write(","); }
+                writer.Write(this.RowToJSON(row));
+                i += 1;
+                if ((i % fetchSize) == 0){
+                    writer.Flush();
+                    response.Flush();
                 }
-                else
-                {
-                    res = serializer.Serialize(chunkResult.CurrentChunk);
-                    writer.Write(CHUNKS_SEPARATOR);
-                    writer.Write(res);
-                }
-                writer.Flush();
-                response.Flush();
-                ++i;
             }
+            writer.Write("]");
+            writer.Flush();
+            response.End();
         }
     }
 }

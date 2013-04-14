@@ -134,7 +134,8 @@ namespace RIAPP.DataService
             set;
         }
 
-        [DataMember]
+        [ScriptIgnore]
+        [IgnoreDataMember]
         public int fetchSize
         {
             get;

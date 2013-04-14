@@ -103,6 +103,7 @@ namespace RIAPP.DataService
             {
                 Row row = new Row();
                 string[] pk = new string[pkInfos.Length];
+                row.values = new string[fieldsCnt];
                 for (int i = 0; i < fieldsCnt; ++i)
                 {
                     string fv = null;
@@ -115,7 +116,7 @@ namespace RIAPP.DataService
                     {
                         pk[keyIndex] = fv;
                     }
-                    row.values.Add(fv);
+                    row.values[i] = fv;
                 }
                 row.key = string.Join(";", pk);
                 rows[counter] = row;
@@ -203,6 +204,7 @@ namespace RIAPP.DataService
             {
                 Row row = new Row();
                 string[] pk = new string[pkInfos.Length];
+                row.values= new string[fieldCnt];
                 for (int i = 0; i < fieldCnt; ++i)
                 {
                     string fv = null;
@@ -215,7 +217,7 @@ namespace RIAPP.DataService
                     {
                         pk[keyIndex] = fv;
                     }
-                    row.values.Add(fv);
+                    row.values[i] = fv;
                 }
                 row.key = string.Join(";", pk);
                 //here we filter out repeated rows

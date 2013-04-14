@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.3.2",
+        version:"1.2.3.3",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -1319,21 +1319,15 @@ RIAPP.Global._coreModules.utils = function (global) {
 
             if (!!fn_success){
                 promise.done(function(data){
-                    var res = data.split(global.modules.consts.CHUNK_SEP);
-                    res = res.map(function(chunks){
-                        return JSON.parse(chunks);
-                    });
-                    if (res.length == 1)
-                        fn_success.call(context, res[0]);
-                    else
-                        fn_success.call(context, res);
+                    fn_success.call(context, data);
                 });
             }
 
-            if (!!fn_error)
+            if (!!fn_error){
                 promise.fail(function(err){
                     fn_error.call(context, err);
                 });
+            }
             return promise;
         },
         performAjaxGet:function(url){
@@ -7611,7 +7605,7 @@ RIAPP.Application._coreModules.db = function (app) {
                         postData,
                         true,
                         function (res) { //success
-                            fn_onComplete(res);
+                            fn_onComplete(JSON.parse(res));
                             self.isBusy = false;
                         },
                         function (er) { //error
@@ -7804,7 +7798,7 @@ RIAPP.Application._coreModules.db = function (app) {
                                 true,
                                 function (res) { //success
                                     try {
-                                        fn_onOK(res);
+                                        fn_onOK(JSON.parse(res));
                                         callback(true);
                                     }
                                     catch (ex) {
@@ -7970,16 +7964,23 @@ RIAPP.Application._coreModules.db = function (app) {
                                 postData,
                                 true,
                                 function (res) { //success
-                                    var  restOfRows = [], getDataResult;
+                                    var data = [], idx, restOfRows = [], getDataResult;
                                     try {
-                                        //if this is array then the first item is getDataResult
-                                        //the other items are rows arrays
-                                        if (utils.check_is.Array(res)){
-                                            getDataResult = res[0];//first item is GetDataResult
-                                            restOfRows = res.slice(1); //the rest is array[1..n] of rows[]
-                                            res = getDataResult;
+                                        idx = res.indexOf(global.modules.consts.CHUNK_SEP);
+                                        if (idx>-1){ //rows were serialized separately
+                                            data.push(res.substr(0,idx));//the first item is getDataResult
+                                            data.push(res.substr(idx+global.modules.consts.CHUNK_SEP.length)); //the rest is rows
                                         }
-                                        loadRes = self._onLoaded(res, isPageChanged, restOfRows);
+                                        else{
+                                            data.push(res); //all response is serialized as getDataResult
+                                        }
+                                        data = data.map(function(chunks){
+                                            return JSON.parse(chunks);
+                                        });
+                                        getDataResult = data[0];//first item is GetDataResult
+                                        if (data.length>1)
+                                            restOfRows = data.slice(1); //the rest is rows[]
+                                        loadRes = self._onLoaded(getDataResult, isPageChanged, restOfRows);
                                         loadRes.outOfBandData = res.extraInfo;
                                         fn_onOK(loadRes);
                                     }
@@ -8073,7 +8074,7 @@ RIAPP.Application._coreModules.db = function (app) {
                             true,
                             function (res) { //success
                                 try {
-                                    self._dataSaved(res);
+                                    self._dataSaved(JSON.parse(res));
                                     fn_onEnd();
                                     callback(true);
                                 }
@@ -8129,7 +8130,7 @@ RIAPP.Application._coreModules.db = function (app) {
                         true,
                         function (metadata) { //success
                             try {
-                                self._initDbSets(metadata);
+                                self._initDbSets(JSON.parse(metadata));
                                 self.isBusy = false;
                             }
                             catch (ex) {

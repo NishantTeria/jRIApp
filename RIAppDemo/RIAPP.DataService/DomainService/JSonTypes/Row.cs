@@ -9,12 +9,12 @@ namespace RIAPP.DataService
     {
         public Row()
         {
-            this.values = new List<string>();
+            this.values = new string[0];
             key = string.Empty;
         }
 
         [DataMember]
-        public List<string> values
+        public string[] values
         {
             get;
             set;
@@ -30,6 +30,10 @@ namespace RIAPP.DataService
         {
             get;
             set;
+        }
+
+        public string ToJSON() { 
+            return SerializationHelper.Serialize(this);
         }
 
     }
