@@ -14,13 +14,13 @@
         <table data-app='default' data-name="gridCustomers" data-bind="@Model.BindGridCustomers"  data-view="@Model.OptionsGridCustomers">
             <thead>
                 <tr>
-                    <th data-column="width:35px,type:row_expander" />
-                    <th data-column="width:40px,type:row_actions" />
-                    <th data-column="width:22px,title:***" data-content="template={displayID=goToInfoColTemplate}" />
-                    <th data-column="width:40px,sortable:true,title:Title" data-content="fieldName:Title" />
-                    <th data-column="width:150px,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name" />
-                    <th data-column="width:50%,sortable:true,title:CompanyName" data-content="fieldName:CompanyName" />
-                    <th data-column="width:150px,sortable:true,title:SalesPerson" data-content="fieldName:SalesPerson" />
+                    <th data-column="width:35px,type:row_expander" ></th>
+                    <th data-column="width:40px,type:row_actions" ></th>
+                    <th data-column="width:22px,title:***" data-content="template={displayID=goToInfoColTemplate}" ></th>
+                    <th data-column="width:40px,sortable:true,title:Title" data-content="fieldName:Title" ></th>
+                    <th data-column="width:150px,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name" ></th>
+                    <th data-column="width:50%,sortable:true,title:CompanyName" data-content="fieldName:CompanyName" ></th>
+                    <th data-column="width:150px,sortable:true,title:SalesPerson" data-content="fieldName:SalesPerson" ></th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -132,13 +132,13 @@
         <table data-app='default' data-name="gridCustAddr" data-bind="{this.dataSource,to=custAdressView}" data-view="options={wrapCss:addressTableWrap,headerCss:addressTableHeader}">
             <thead>
                 <tr>
-                    <th data-column="width:10%,title=Type,sortable:true,sortMemberName=AddressType;AddressLine" data-content="fieldName:AddressType" />
-                    <th data-column="width:20%,title=Address1,sortable:true" data-content="fieldName:Address.AddressLine1" />
-                    <th data-column="width:20%,title=Address2,sortable:true" data-content="fieldName:Address.AddressLine2" />
-                    <th data-column="width:15%,title=City,sortable:true,sortMemberName=Address.City;Address.AddressLine1" data-content="fieldName:Address.City" />
-                    <th data-column="width:15%,title=State,sortable:true,sortMemberName=Address.StateProvince;Address.AddressLine1" data-content="fieldName:Address.StateProvince" />
-                    <th data-column="width:10%,title=Region,sortable:false" data-content="fieldName:Address.CountryRegion" />
-                    <th data-column="width:10%,title=Zip,sortable:false" data-content="fieldName:Address.PostalCode" />
+                    <th data-column="width:10%,title=Type,sortable:true,sortMemberName=AddressType;AddressLine" data-content="fieldName:AddressType" ></th>
+                    <th data-column="width:20%,title=Address1,sortable:true" data-content="fieldName:Address.AddressLine1" ></th>
+                    <th data-column="width:20%,title=Address2,sortable:true" data-content="fieldName:Address.AddressLine2" ></th>
+                    <th data-column="width:15%,title=City,sortable:true,sortMemberName=Address.City;Address.AddressLine1" data-content="fieldName:Address.City" ></th>
+                    <th data-column="width:15%,title=State,sortable:true,sortMemberName=Address.StateProvince;Address.AddressLine1" data-content="fieldName:Address.StateProvince"></th>
+                    <th data-column="width:10%,title=Region,sortable:false" data-content="fieldName:Address.CountryRegion"></th>
+                    <th data-column="width:10%,title=Zip,sortable:false" data-content="fieldName:Address.PostalCode"></th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -233,8 +233,7 @@
 
 @*Grid details template for customer's orders*@
 <div id="customerDetailsTemplate" data-role="template">
-    <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM"
-        data-view="name='tabs'">
+    <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="{this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM}"  data-view="name='tabs'">
         <div id="detailsTabs">
             <ul>
                 <li><a href="#custDetails">Details on&nbsp;<span data-bind="{this.value,to=Name}"></span></a></li>
@@ -294,15 +293,15 @@
                     <table style="font-size:9pt; margin-bottom:3px;" data-app='default' data-name="tblOrders" data-bind="@Model.BindTableCustOrders" data-view="@Model.OptionsTableCustOrders">
                         <thead>
                             <tr>
-                                <th data-column="width:20px,type:row_expander" />
-                                <th data-column="width:50px,type:row_actions" />
-                                <th data-column="width:50%,sortable:true,title:SalesOrderNumber" data-content="fieldName:SalesOrderNumber" />
-                                <th data-column="width:50%,sortable:true,title:PurchaseOrderNumber" data-content="fieldName:PurchaseOrderNumber,readOnly:true" />
-                                <th data-column="width:110px,sortable:true,title:OrderDate" data-content="fieldName:OrderDate,readOnly:true" />
-                                <th data-column="width:110px,sortable:true,title:DueDate" data-content="fieldName:DueDate,readOnly:true" />
-                                <th data-column="width:110px,sortable:true,title:ShipDate" data-content="fieldName:ShipDate,readOnly:true" />
-                                <th data-column="width:150px,sortable:true,title:TotalDue" data-content="fieldName:TotalDue,readOnly:true" />
-                                <th data-column="width:150px,sortable:true,title:IsOnlineOrder" data-content="fieldName:OnlineOrderFlag,readOnly:true" />
+                                <th data-column="width:20px,type:row_expander"></th>
+                                <th data-column="width:50px,type:row_actions"></th>
+                                <th data-column="width:50%,sortable:true,title:SalesOrderNumber" data-content="fieldName:SalesOrderNumber"></th>
+                                <th data-column="width:50%,sortable:true,title:PurchaseOrderNumber" data-content="fieldName:PurchaseOrderNumber,readOnly:true" ></th>
+                                <th data-column="width:110px,sortable:true,title:OrderDate" data-content="fieldName:OrderDate,readOnly:true" ></th>
+                                <th data-column="width:110px,sortable:true,title:DueDate" data-content="fieldName:DueDate,readOnly:true" ></th>
+                                <th data-column="width:110px,sortable:true,title:ShipDate" data-content="fieldName:ShipDate,readOnly:true"></th>
+                                <th data-column="width:150px,sortable:true,title:TotalDue" data-content="fieldName:TotalDue,readOnly:true" ></th>
+                                <th data-column="width:150px,sortable:true,title:IsOnlineOrder" data-content="fieldName:OnlineOrderFlag,readOnly:true" ></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -573,13 +572,13 @@
                     data-view="options={wrapCss:orderDetailTableWrap,isHandleAddNew:true,editor:{templateID:orderDetEditTemplate,width:650,height:550,title:'Order Detail editing'}}">
                     <thead>
                         <tr>
-                            <th data-column="width:50px,type:row_actions" />
-                            <th data-column="width:80px,sortable:true,title:OrderQty" data-content="fieldName:OrderQty,readOnly:true" />
-                            <th data-column="width:80px,sortable:true,title:UnitPrice" data-content="fieldName:UnitPrice,readOnly:true" />
-                            <th data-column="width:80px,sortable:true,title:UnitPriceDiscount" data-content="fieldName:UnitPriceDiscount,readOnly:true" />
-                            <th data-column="width:80px,sortable:true,title:LineTotal" data-content="fieldName:LineTotal,readOnly:true" />
-                            <th data-column="width:80px,sortable:true,title:Status" data-content="fieldName:SalesOrderHeader.Status,readOnly:true" />
-                            <th data-column="width:100%,title:Product" data-content="fieldName:Product.Name,readOnly:true" />
+                            <th data-column="width:50px,type:row_actions" ></th>
+                            <th data-column="width:80px,sortable:true,title:OrderQty" data-content="fieldName:OrderQty,readOnly:true" ></th>
+                            <th data-column="width:80px,sortable:true,title:UnitPrice" data-content="fieldName:UnitPrice,readOnly:true" ></th>
+                            <th data-column="width:80px,sortable:true,title:UnitPriceDiscount" data-content="fieldName:UnitPriceDiscount,readOnly:true" ></th>
+                            <th data-column="width:80px,sortable:true,title:LineTotal" data-content="fieldName:LineTotal,readOnly:true" ></th>
+                            <th data-column="width:80px,sortable:true,title:Status" data-content="fieldName:SalesOrderHeader.Status,readOnly:true" ></th>
+                            <th data-column="width:100%,title:Product" data-content="fieldName:Product.Name,readOnly:true" ></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -608,7 +607,7 @@
             data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
             <thead>
                 <tr>
-                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:Name" />
+                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:Name"></th>
                 </tr>
             </thead>
             <tbody>
@@ -649,7 +648,7 @@
             data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
             <thead>
                 <tr>
-                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:SalesPerson" />
+                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:SalesPerson" ></th>
                 </tr>
             </thead>
             <tbody>
@@ -674,8 +673,7 @@
 @*used for display of customer's address*@
 <div id="addressTemplate" data-role="template" class="addressTemplate">
     <fieldset>
-        <legend style="margin-bottom: 4px; font-size: 14px; font-weight: bold;"><span class="address"
-            data-bind="{this.value,to=AddressType}"></span></legend>
+        <legend style="margin-bottom: 4px; font-size: 14px; font-weight: bold;"><span class="address" data-bind="{this.value,to=AddressType}"></span></legend>
   <!-- we can use dataform to assign to it datacontext that is other than inside this template.
       the look of the form changes to editing when the current entity is began editing
   -->
@@ -737,9 +735,9 @@
                             data-view="options={wrapCss:findAddrTableWrap,isCanDelete=false,isCanEdit=true,isUseScrollInto=false}">
                             <thead>
                                 <tr>
-                                    <th data-column="width:50px,type:row_actions" />
-                                    <th data-column="width:40%,title=AddressType" data-content="fieldName:AddressType" />
-                                    <th data-column="width:60%,title=Address,sortable:true" data-content="fieldName:Address.AddressLine1" />
+                                    <th data-column="width:50px,type:row_actions"></th>
+                                    <th data-column="width:40%,title=AddressType" data-content="fieldName:AddressType" ></th>
+                                    <th data-column="width:60%,title=Address,sortable:true" data-content="fieldName:Address.AddressLine1" ></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -764,11 +762,11 @@
                             data-view="options={wrapCss:findAddrTableWrap}">
                             <thead>
                                 <tr>
-                                    <th data-column="width:100%,sortable:true,title:Address" data-content="fieldName:AddressLine1" />
+                                    <th data-column="width:100%,sortable:true,title:Address" data-content="fieldName:AddressLine1" ></th>
                                     <th data-column="width:100%,sortable:true,title:City,sortMemberName=City;AddressLine1"
-                                        data-content="fieldName:City" />
+                                        data-content="fieldName:City" ></th>
                                     <th data-column="width:100%,sortable:true,title:CountryRegion,sortMemberName=CountryRegion;City;AddressLine1"
-                                        data-content="fieldName:CountryRegion" />
+                                        data-content="fieldName:CountryRegion" ></th>
                                 </tr>
                             </thead>
                             <tbody>

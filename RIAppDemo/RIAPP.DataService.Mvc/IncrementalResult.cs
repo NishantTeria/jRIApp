@@ -65,11 +65,12 @@ namespace RIAPP.DataService.Mvc
             }
 
             var allRows = this.Data.rows;
-            this.Data.rows = new Row[0];
+            this.Data.rows = null;
             writer.Write(serializer.Serialize(this.Data));
             writer.Write(SEPARATOR);
             writer.Write("[");
-            int fetchSize = this.Data.fetchSize==0 ? 500: this.Data.fetchSize;
+            //default is to flush every 500 rows
+            int fetchSize = this.Data.fetchSize<=0 ? 500: this.Data.fetchSize;
             int i = 0;
             foreach (var row in allRows)
             {

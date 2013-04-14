@@ -163,12 +163,12 @@
         <table data-app='default' data-name="gridCustomers" data-bind="@Model.BindGridCustomers"  data-view="@Model.OptionsGridCustomers">
             <thead>
                 <tr>
-                    <th data-column="width:35px,type:row_expander" />
-                    <th data-column="width:50px,type:row_actions" />
-                    <th data-column="width:40px,sortable:true,title:Title" data-content="fieldName:Title" />
-                    <th data-column="width:150px,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name" />
-                    <th data-column="width:50%,sortable:true,title:CompanyName" data-content="fieldName:CompanyName" />
-                    <th data-column="width:150px,sortable:true,title:SalesPerson" data-content="fieldName:SalesPerson" />
+                    <th data-column="width:35px,type:row_expander" ></th>
+                    <th data-column="width:50px,type:row_actions" ></th>
+                    <th data-column="width:40px,sortable:true,title:Title" data-content="fieldName:Title" ></th>
+                    <th data-column="width:150px,sortable:true,title:Customer Name,sortMemberName=LastName;MiddleName;FirstName" data-content="fieldName:Name" ></th>
+                    <th data-column="width:50%,sortable:true,title:CompanyName" data-content="fieldName:CompanyName" ></th>
+                    <th data-column="width:150px,sortable:true,title:SalesPerson" data-content="fieldName:SalesPerson" ></th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -355,15 +355,15 @@
                     <table style="font-size:9pt; margin-bottom:3px;" data-app='default' data-name="tblOrders" data-bind="@Model.BindTableCustOrders" data-view="@Model.OptionsTableCustOrders">
                         <thead>
                             <tr>
-                                <th data-column="width:20px,type:row_expander" />
-                                <th data-column="width:50px,type:row_actions" />
-                                <th data-column="width:50%,sortable:true,title:SalesOrderNumber" data-content="fieldName:SalesOrderNumber" />
-                                <th data-column="width:50%,sortable:true,title:PurchaseOrderNumber" data-content="fieldName:PurchaseOrderNumber,readOnly:true" />
-                                <th data-column="width:110px,sortable:true,title:OrderDate" data-content="fieldName:OrderDate,readOnly:true" />
-                                <th data-column="width:110px,sortable:true,title:DueDate" data-content="fieldName:DueDate,readOnly:true" />
-                                <th data-column="width:110px,sortable:true,title:ShipDate" data-content="fieldName:ShipDate,readOnly:true" />
-                                <th data-column="width:150px,sortable:true,title:TotalDue" data-content="fieldName:TotalDue,readOnly:true" />
-                                <th data-column="width:150px,sortable:true,title:IsOnlineOrder" data-content="fieldName:OnlineOrderFlag,readOnly:true" />
+                                <th data-column="width:20px,type:row_expander"></th>
+                                <th data-column="width:50px,type:row_actions"></th>
+                                <th data-column="width:50%,sortable:true,title:SalesOrderNumber" data-content="fieldName:SalesOrderNumber" ></th>
+                                <th data-column="width:50%,sortable:true,title:PurchaseOrderNumber" data-content="fieldName:PurchaseOrderNumber,readOnly:true" ></th>
+                                <th data-column="width:110px,sortable:true,title:OrderDate" data-content="fieldName:OrderDate,readOnly:true" ></th>
+                                <th data-column="width:110px,sortable:true,title:DueDate" data-content="fieldName:DueDate,readOnly:true" ></th>
+                                <th data-column="width:110px,sortable:true,title:ShipDate" data-content="fieldName:ShipDate,readOnly:true" ></th>
+                                <th data-column="width:150px,sortable:true,title:TotalDue" data-content="fieldName:TotalDue,readOnly:true" ></th>
+                                <th data-column="width:150px,sortable:true,title:IsOnlineOrder" data-content="fieldName:OnlineOrderFlag,readOnly:true" ></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -660,13 +660,13 @@
                         data-view="options={wrapCss:orderDetailTableWrap,isHandleAddNew:true,editor:{templateID:orderDetEditTemplate,width:650,height:550,title:'Order Detail editing'}}">
                         <thead>
                             <tr>
-                                <th data-column="width:50px,type:row_actions" />
-                                <th data-column="width:80px,sortable:true,title:OrderQty" data-content="fieldName:OrderQty,readOnly:true" />
-                                <th data-column="width:80px,sortable:true,title:UnitPrice" data-content="fieldName:UnitPrice,readOnly:true" />
-                                <th data-column="width:80px,sortable:true,title:UnitPriceDiscount" data-content="fieldName:UnitPriceDiscount,readOnly:true" />
-                                <th data-column="width:80px,sortable:true,title:LineTotal" data-content="fieldName:LineTotal,readOnly:true" />
-                                <th data-column="width:80px,sortable:true,title:Status" data-content="fieldName:SalesOrderHeader.Status,readOnly:true" />
-                                <th data-column="width:100%,title:Product" data-content="fieldName:Product.Name,readOnly:true" />
+                                <th data-column="width:50px,type:row_actions" ></th>
+                                <th data-column="width:80px,sortable:true,title:OrderQty" data-content="fieldName:OrderQty,readOnly:true" ></th>
+                                <th data-column="width:80px,sortable:true,title:UnitPrice" data-content="fieldName:UnitPrice,readOnly:true" ></th>
+                                <th data-column="width:80px,sortable:true,title:UnitPriceDiscount" data-content="fieldName:UnitPriceDiscount,readOnly:true" ></th>
+                                <th data-column="width:80px,sortable:true,title:LineTotal" data-content="fieldName:LineTotal,readOnly:true" ></th>
+                                <th data-column="width:80px,sortable:true,title:Status" data-content="fieldName:SalesOrderHeader.Status,readOnly:true" ></th>
+                                <th data-column="width:100%,title:Product" data-content="fieldName:Product.Name,readOnly:true" ></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -695,7 +695,7 @@
                 data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
                 <thead>
                     <tr>
-                        <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:Name" />
+                        <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:Name" ></th>
                     </tr>
                 </thead>
                 <tbody>

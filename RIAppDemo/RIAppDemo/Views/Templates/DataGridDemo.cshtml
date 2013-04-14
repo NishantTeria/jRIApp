@@ -162,8 +162,7 @@
 </div>
 <!--Grid details product template-->
 <div id="productDetailsTemplate" data-role="template">
-    <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.productVM"
-        data-view="name='tabs'">
+    <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="{this.tabsEventCommand,to=tabsEventCommand,source=VM.productVM}"  data-view="name='tabs'">
         <div id="myTabs">
             <ul>
                 <li><a href="#a">Tab 1</a></li>
@@ -174,8 +173,7 @@
                 <input type="text" style="color: Green; width: 220px; margin: 5px;" data-bind="{this.value,to=Name,mode=TwoWay}" />
                 <br />
                 <a class="btn btn-info btn-small" data-bind="{this.command,to=testInvokeCommand,source=VM.productVM}{this.commandParam}"
-                    data-view="options={tip='Invokes method on the server and displays result'}">Click
-                    me to invoke service method</a>
+                    data-view="options={tip='Invokes method on the server and displays result'}">Click Me to invoke service method</a>
             </div>
             <div id="b">
                 <img style="float:left" data-bind="{this.id,to=ProductID}{this.fileName,to=ThumbnailPhotoFileName}" alt="Product Image" src="" data-view="name=fileImage,options={baseUri:'@Url.RouteUrl("Default", new { controller = "Download", action = "ThumbnailDownload" })'}"/><br />
@@ -186,8 +184,7 @@
                 <div style="clear: both; padding: 5px 0px 5px 0px;">
                     <!--bind commandParameter to current datacontext, that is product entity-->
                     <a class="btn btn-info btn-small" data-name="upload" data-bind="{this.command,to=dialogCommand,source=VM.uploadVM}{this.commandParam}"
-                        data-view="options={tip='click me to upload product thumbnail photo'}">Upload product
-                        thumbnail</a>
+                        data-view="options={tip='click me to upload product thumbnail photo'}">Upload product thumbnail</a>
                 </div>
             </div>
         </div>
@@ -195,8 +192,7 @@
     </div>
 </div>
 <!--upload thumbnail dialog template-->
-<div id="uploadTemplate" data-role="template" data-bind="{this.command,to=templateCommand,source=VM.uploadVM}"
-    data-view="name=template">
+<div id="uploadTemplate" data-role="template" data-bind="{this.command,to=templateCommand,source=VM.uploadVM}"  data-view="name=template">
     <!--dummy form action to satisfy HTML5 specification-->
     <form data-name="uploadForm" action='#'>
     <div data-name="uploadBlock">

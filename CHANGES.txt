@@ -78,3 +78,7 @@ VERSION 1.2.3:
 1) Code optimization.
 
 2) One Bug fix (introduced in version 1.2.2)
+
+VERSION 1.2.4:
+
+1) Optimizations from the server and the client parts to load large json payloads.

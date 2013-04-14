@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.3.3",
+        version:"1.2.4.0",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -5737,7 +5737,8 @@ RIAPP.Application._coreModules.collection = function (app) {
 RIAPP.Application._coreModules.db = function (app) {
     var thisModule = this, global = app.global, collMod = app.modules.collection, errorMod = global.modules.errors,
         utils = global.utils, Entity, DataQuery, DbSet, DATA_TYPE = global.consts.DATA_TYPE, CHANGE_TYPE = global.consts.CHANGE_TYPE;
-    var valueUtils = collMod.valueUtils, COLL_CHANGE_TYPE = collMod.consts.COLL_CHANGE_TYPE, FLAGS = {None:0, Changed:1, Setted:2, Refreshed:4},
+    var valueUtils = collMod.valueUtils, COLL_CHANGE_TYPE = collMod.consts.COLL_CHANGE_TYPE,
+        FLAGS = {None:0, Changed:1, Setted:2, Refreshed:4},
         FILTER_TYPE = { Equals:0, Between:1, StartsWith:2, EndsWith:3, Contains:4, Gt:5, Lt:6, GtEq:7, LtEq:8, NotEq:9 },
         SORT_ORDER = collMod.consts.SORT_ORDER;
 
@@ -7004,17 +7005,11 @@ RIAPP.Application._coreModules.db = function (app) {
                 data = utils.extend(false, {
                     res:{names:[], rows:[], pageIndex:null, pageCount:null, dbSetName:this.dbSetName, totalCount:null},
                     isPageChanged:false,
-                    fn_beforeFillEnd:null,
-                    restOfRows: []
+                    fn_beforeFillEnd:null
                 }, data);
-                var self =this, res = data.res, fieldNames = res.names, rowsChunks = [], rowCount = 0, entityType = this._entityType,
-                    newItems = [], positions = [], created_items = [], fetchedItems = [], isPagingEnabled = this.isPagingEnabled,
-                    RM = REFRESH_MODE.RefreshCurrent, query = this.query, clearAll = true, dataCache;
-                rowsChunks.push(res.rows)
-                rowsChunks = rowsChunks.concat(data.restOfRows);
-                rowsChunks.forEach(function(chunk){
-                    rowCount+= chunk.length;
-                });
+                var self =this, res = data.res, fieldNames = res.names, rows = res.rows || [], rowCount = rows.length,
+                    entityType = this._entityType, newItems = [], positions = [], created_items = [], fetchedItems = [],
+                    isPagingEnabled = this.isPagingEnabled, RM = REFRESH_MODE.RefreshCurrent, query = this.query, clearAll = true, dataCache;
 
                 this._onFillStart({ isBegin:true, rowCount:rowCount, time:new Date(), isPageChanged:data.isPageChanged });
                 try {
@@ -7030,34 +7025,31 @@ RIAPP.Application._coreModules.db = function (app) {
                                 dataCache.totalCount = res.totalCount;
                         }
                     }
-                    rowsChunks.forEach(function(chunk){
-                        var items = chunk.map(function (row) {
-                            //row.key already string value generated on server (no need to convert to string)
-                            var key = row.key;
-                            if (!key)
-                                throw new Error(RIAPP.ERRS.ERR_KEY_IS_EMPTY);
+                    var created_items = rows.map(function (row) {
+                        //row.key already string value generated on server (no need to convert to string)
+                        var key = row.key;
+                        if (!key)
+                            throw new Error(RIAPP.ERRS.ERR_KEY_IS_EMPTY);
 
-                            var item = self._itemsByKey[key];
-                            if (!item) {
-                                if (!!dataCache) {
-                                    item = dataCache.getItemByKey(key);
-                                }
-                                if (!item)
-                                    item = entityType.create(row, fieldNames);
-                                else {
-                                    row.values.forEach(function (val, index) {
-                                        item._refreshValue(val, fieldNames[index], RM);
-                                    });
-                                }
+                        var item = self._itemsByKey[key];
+                        if (!item) {
+                            if (!!dataCache) {
+                                item = dataCache.getItemByKey(key);
                             }
+                            if (!item)
+                                item = entityType.create(row, fieldNames);
                             else {
                                 row.values.forEach(function (val, index) {
                                     item._refreshValue(val, fieldNames[index], RM);
                                 });
                             }
-                            return item;
-                        });
-                        created_items = created_items.concat(items);
+                        }
+                        else {
+                            row.values.forEach(function (val, index) {
+                                item._refreshValue(val, fieldNames[index], RM);
+                            });
+                        }
+                        return item;
                     });
 
                     if (!!query) {
@@ -7649,7 +7641,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     dbSet.fillItems(subset, true);
                 });
             },
-            _onLoaded:function (res, isPageChanged, restOfRows) {
+            _onLoaded:function (res, isPageChanged) {
                 var self = this, operType = DATA_OPER.LOAD, dbSetName, dbSet, methRes;
                 try {
                     if (!res)
@@ -7665,8 +7657,7 @@ RIAPP.Application._coreModules.db = function (app) {
                             isPageChanged:isPageChanged,
                             fn_beforeFillEnd:function () {
                                 self._loadIncluded(res);
-                            },
-                            restOfRows: restOfRows
+                            }
                         });
                 } catch (ex) {
                     if (global._checkIsDummy(ex)) {
@@ -7964,7 +7955,7 @@ RIAPP.Application._coreModules.db = function (app) {
                                 postData,
                                 true,
                                 function (res) { //success
-                                    var data = [], idx, restOfRows = [], getDataResult;
+                                    var data = [], idx, getDataResult;
                                     try {
                                         idx = res.indexOf(global.modules.consts.CHUNK_SEP);
                                         if (idx>-1){ //rows were serialized separately
@@ -7974,13 +7965,13 @@ RIAPP.Application._coreModules.db = function (app) {
                                         else{
                                             data.push(res); //all response is serialized as getDataResult
                                         }
-                                        data = data.map(function(chunks){
-                                            return JSON.parse(chunks);
+                                        data = data.map(function(txt){
+                                            return JSON.parse(txt);
                                         });
                                         getDataResult = data[0];//first item is GetDataResult
                                         if (data.length>1)
-                                            restOfRows = data.slice(1); //the rest is rows[]
-                                        loadRes = self._onLoaded(getDataResult, isPageChanged, restOfRows);
+                                            getDataResult.rows = data[1]; //the rest is rows[]
+                                        loadRes = self._onLoaded(getDataResult, isPageChanged);
                                         loadRes.outOfBandData = res.extraInfo;
                                         fn_onOK(loadRes);
                                     }
