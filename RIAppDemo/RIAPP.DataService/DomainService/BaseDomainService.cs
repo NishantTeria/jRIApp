@@ -229,6 +229,7 @@ namespace RIAPP.DataService
             }
 
             current.rows = rows.Values;
+            current.rowCount = counter;
         }
         
         protected ServiceMetadata EnsureMetadataInitialized()
@@ -754,6 +755,7 @@ namespace RIAPP.DataService
                 totalCount = totalCount,
                 extraInfo = queryResult.extraInfo,
                 rows = rows,
+                rowCount = rowCnt,
                 fetchSize= getInfo.dbSetInfo.FetchSize,
                 included = subResults,
                 error = null

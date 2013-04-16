@@ -82,3 +82,8 @@ VERSION 1.2.3:
 VERSION 1.2.4:
 
 1) Optimizations from the server and the client parts to load large json payloads.
+
+VERSION 1.2.4.1:
+
+1) More Optimizations from the server and the client parts to load large json payloads.
+2) Renamed two dataGrid methods _sortByColumn to sortByColumn, and _selectRows to selectRows

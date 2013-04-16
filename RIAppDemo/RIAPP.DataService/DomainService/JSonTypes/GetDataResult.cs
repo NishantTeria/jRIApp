@@ -39,6 +39,15 @@ namespace RIAPP.DataService
             set;
         }
 
+        /// <summary>
+        /// The count of rows in the result
+        /// </summary>
+        [DataMember]
+        public int rowCount
+        {
+            get;
+            set;
+        }
 
         [DataMember]
         public string dbSetName
@@ -47,7 +56,7 @@ namespace RIAPP.DataService
             set;
         }
 
-    
+            
         public string ToJSON()
         {
             return SerializationHelper.Serialize(this);
@@ -75,15 +84,15 @@ namespace RIAPP.DataService
         }
 
         /// <summary>
-        /// related child entities (from navigation properties) included in the main result
+        /// The count of rows in the result
         /// </summary>
         [DataMember]
-        public IEnumerable<IncludedResult> included
+        public int rowCount
         {
             get;
             set;
         }
-
+     
         [DataMember]
         public int? pageIndex
         {
@@ -129,6 +138,17 @@ namespace RIAPP.DataService
         /// </summary>
         [DataMember]
         public ErrorInfo error
+        {
+            get;
+            set;
+        }
+
+     
+        /// <summary>
+        /// related child entities (from navigation properties) included in the main result
+        /// </summary>
+        [DataMember]
+        public IEnumerable<IncludedResult> included
         {
             get;
             set;

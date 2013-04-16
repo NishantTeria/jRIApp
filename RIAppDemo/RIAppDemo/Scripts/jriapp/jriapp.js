@@ -52,7 +52,7 @@ RIAPP.utils = (function () {
         isArray:function (o) {
             if (!o)
                 return false;
-            return Object.prototype.toString.call(o) === '[object Array]';
+            return Array.isArray(o);
         },
         /**
          *    Usage:     format('test {0}={1}', 'x', 100);
@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.4.0",
+        version:"1.2.4.1",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -3152,6 +3152,154 @@ RIAPP.Application._coreModules.baseElView = function (app) {
             thisModule.CommandElView = obj;
             app.registerType('CommandElView',obj);
         });
+
+    var TemplateElView = CommandElView.extend({
+            _init: function(options){
+                this._super(options);
+                this._template = null;
+                this._isEnabled = true;
+            },
+            templateLoaded:function (template) {
+                var self = this, p = self._commandParam;
+                self._template = template;
+                self._template.isDisabled = !self._isEnabled;
+                self._commandParam = {template:template, isLoaded:true};
+                self.invokeCommand();
+                self._commandParam = p;
+                this.raisePropertyChanged('template');
+            },
+            templateUnloading:function (template) {
+                var self = this, p = self._commandParam;
+                try
+                {
+                    self._commandParam = {template:template, isLoaded:false};
+                    self.invokeCommand();
+                }
+                finally{
+                    self._commandParam = p;
+                    self._template = null;
+                }
+                this.raisePropertyChanged('template');
+            },
+            toString:function () {
+                return 'TemplateElView';
+            }
+        },
+        {
+            isEnabled:{
+                set:function (v) {
+                    if (this._isEnabled !== v){
+                        this._isEnabled = v;
+                        if (!!this._template){
+                            this._template.isDisabled = !this._isEnabled;
+                        }
+                        this.raisePropertyChanged('isEnabled');
+                    }
+                },
+                get:function () {
+                    return this._isEnabled;
+                }
+            },
+            template:{
+                get:function () {
+                    return this._template;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.TemplateElView = obj;
+            app.registerType('TemplateElView',obj);
+            app.registerElView('template', obj);
+        });
+
+
+    var DynaContentElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                this._dataContext = null;
+                this._template = null;
+            },
+            _templateChanged: function(){
+                this.raisePropertyChanged('templateID');
+                if (!this._template)
+                    return;
+                this.$el.empty().append(this._template.el);
+            },
+            updateTemplate: function(name){
+                var self = this;
+                try{
+                    if (!name && !!this._template){
+                        this._template.destroy();
+                        this._template = null;
+                        self._templateChanged();
+                        return;
+                    }
+                }catch(ex){
+                    this._onError(ex,this);
+                    global._throwDummy(ex);
+                }
+
+                try{
+                    if (!this._template){
+                        this._template = this._app.getType('Template').create(name);
+                        this._template.dataContext = this._dataContext;
+                        this._template.addOnPropertyChange('templateID',function(s,a){
+                            self._templateChanged();
+                        },this._objId);
+                        self._templateChanged();
+                        return;
+                    }
+
+                    this._template.templateID = name;
+                }catch(ex){
+                    this._onError(ex,this);
+                    global._throwDummy(ex);
+                }
+            },
+            destroy:function () {
+                if (!!this._template){
+                    this._template.destroy();
+                    this._template = null;
+                }
+                this._dataContext = null;
+                this._super();
+            }
+        },
+        {
+            templateID:{
+                set:function (v) {
+                    this.updateTemplate(v);
+                },
+                get:function () {
+                    if (!this._template)
+                        return null;
+                    return this._template.templateID;
+                }
+            },
+            template:{
+                get:function () {
+                    return this._template;
+                }
+            },
+            dataContext:{
+                set:function (v) {
+                    var self = this;
+                    if (this._dataContext !== v) {
+                        this._dataContext = v;
+                        if (!!this._template)
+                            this._template.dataContext = this._dataContext;
+                    }
+                },
+                get:function () {
+                    return this._dataContext;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.DynaContentElView = obj;
+            app.registerType('DynaContentElView',obj);
+            app.registerElView(global.consts.ELVIEW_NM.DYNACONT, obj);
+        });
 };
 
 RIAPP.Application._coreModules.binding = function (app) {
@@ -3663,7 +3811,8 @@ RIAPP.Application._coreModules.binding = function (app) {
 
 RIAPP.Application._coreModules.template = function (app) {
     var thisModule = this, global = app.global, utils = global.utils, consts = global.consts,
-        Binding = app.modules.binding.Binding, BaseElView = app.modules.baseElView.BaseElView;
+        Binding = app.modules.binding.Binding, BaseElView = app.modules.baseElView.BaseElView,
+        TemplateElView = app.modules.baseElView.TemplateElView;
 
     /*define Template class and register its type*/
     thisModule.Template = RIAPP.BaseObject.extend({
@@ -3705,9 +3854,9 @@ RIAPP.Application._coreModules.template = function (app) {
                 return null;
             if (!!this._templElView)
                 return this._templElView;
-            var res = null, elView = this._app.modules.elview.TemplateElView, arr = this._getElViews();
+            var res = null, arr = this._getElViews();
             for (var i = 0, j = arr.length; i < j; i += 1) {
-                if (elView.isPrototypeOf(arr[i])) {
+                if (TemplateElView.isPrototypeOf(arr[i])) {
                     res = arr[i];
                     break;
                 }
@@ -7101,7 +7250,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     isPageChanged:false,
                     fn_beforeFillEnd:null
                 }, data);
-                var positions = [], fetchedItems = [], query = this.query;
+                var self = this, positions = [], fetchedItems = [], query = this.query;
                 if (!query)
                     throw new Error(String.format(RIAPP.ERRS.ERR_ASSERTION_FAILED, 'query is not null'));
                 var dataCache = query._getCache();
@@ -7114,10 +7263,10 @@ RIAPP.Application._coreModules.db = function (app) {
                     this._items = items;
 
                     items.forEach(function (item, index) {
-                        this._itemsByKey[item._key] = item;
+                        self._itemsByKey[item._key] = item;
                         positions.push(index);
                         fetchedItems.push(item);
-                    }, this);
+                    });
 
                     if (!!data.fn_beforeFillEnd) {
                         data.fn_beforeFillEnd();
@@ -7955,7 +8104,7 @@ RIAPP.Application._coreModules.db = function (app) {
                                 postData,
                                 true,
                                 function (res) { //success
-                                    var data = [], idx, getDataResult;
+                                    var data = [], idx;
                                     try {
                                         idx = res.indexOf(global.modules.consts.CHUNK_SEP);
                                         if (idx>-1){ //rows were serialized separately
@@ -7968,12 +8117,38 @@ RIAPP.Application._coreModules.db = function (app) {
                                         data = data.map(function(txt){
                                             return JSON.parse(txt);
                                         });
-                                        getDataResult = data[0];//first item is GetDataResult
-                                        if (data.length>1)
-                                            getDataResult.rows = data[1]; //the rest is rows[]
-                                        loadRes = self._onLoaded(getDataResult, isPageChanged);
-                                        loadRes.outOfBandData = res.extraInfo;
-                                        fn_onOK(loadRes);
+
+                                        //let the UI some time, then do the rest of the work
+                                        setTimeout(function(){
+                                            var allRows, getDataResult = data[0];//first item is GetDataResult
+                                            var hasIncluded = !!getDataResult.included && getDataResult.included.length > 0;
+                                            try
+                                            {
+                                                if (data.length>1){ //rows was loaded separately from GetDataResult
+                                                    allRows = data[1];
+                                                    if (allRows && allRows.length>0){
+                                                        if (hasIncluded){
+                                                            getDataResult.included.forEach(function (subset) {
+                                                                subset.rows = allRows.splice(0,subset.rowCount);
+                                                                if (subset.rowCount != subset.rows.length){
+                                                                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_ASSERTION_FAILED,'subset.rowCount == subset.rows.length'));
+                                                                }
+                                                            });
+                                                        }
+                                                        getDataResult.rows = allRows;
+                                                        if (getDataResult.rowCount != getDataResult.rows.length){
+                                                            throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_ASSERTION_FAILED,'getDataResult.rowCount == getDataResult.rows.length'));
+                                                        }
+                                                    }
+                                                }
+                                                loadRes = self._onLoaded(getDataResult, isPageChanged);
+                                                loadRes.outOfBandData = res.extraInfo;
+                                                fn_onOK(loadRes);
+                                            }
+                                            catch (ex) {
+                                                fn_onErr(ex);
+                                            }
+                                        },0);
                                     }
                                     catch (ex) {
                                         fn_onErr(ex);
@@ -10862,7 +11037,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                     }
                     else
                         this.sortOrder = 'ASC';
-                    this.grid._sortByColumn(this);
+                    this.grid.sortByColumn(this);
                 }
             },
             destroy:function () {
@@ -11006,7 +11181,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
             });
         },
         _onCheckBoxClicked:function (isChecked) {
-            this.grid._selectRows(isChecked);
+            this.grid.selectRows(isChecked);
         },
         toString:function () {
             return 'RowSelectorColumn';
@@ -11680,7 +11855,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 }
                 this.raiseEvent('row_expanded', {old_expandedRow:old, expandedRow:parentRow, isExpanded:expanded});
             },
-            _sortByColumn:function (column) {
+            sortByColumn:function (column) {
                 var ds = this._dataSource, query = ds.query;
                 var sorts = column.sortMemberName.split(';');
                 if (!!query) {
@@ -11701,13 +11876,12 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                     this._isSorting = true;
                     ds.sortLocal(sorts, column.sortOrder);
                 }
-
             },
-            _selectRows:function (isSelected) {
+            selectRows:function (isSelect) {
                 this._rows.forEach(function (row) {
                     if (row.isDeleted)
                         return;
-                    row.isSelected = isSelected;
+                    row.isSelected = isSelect;
                 });
             },
             findRowByItem:function (item) {
@@ -14245,65 +14419,6 @@ RIAPP.Application._coreModules.elview = function (app) {
             app.registerElView('input:radio', obj);
         });
 
-    var TemplateElView = CommandElView.extend({
-            _init: function(options){
-                this._super(options);
-                this._template = null;
-                this._isEnabled = true;
-            },
-            templateLoaded:function (template) {
-                var self = this, p = self._commandParam;
-                self._template = template;
-                self._template.isDisabled = !self._isEnabled;
-                self._commandParam = {template:template, isLoaded:true};
-                self.invokeCommand();
-                self._commandParam = p;
-                this.raisePropertyChanged('template');
-            },
-            templateUnloading:function (template) {
-                var self = this, p = self._commandParam;
-                try
-                {
-                    self._commandParam = {template:template, isLoaded:false};
-                    self.invokeCommand();
-                }
-                finally{
-                    self._commandParam = p;
-                    self._template = null;
-                }
-                this.raisePropertyChanged('template');
-            },
-            toString:function () {
-                return 'TemplateElView';
-            }
-        },
-        {
-            isEnabled:{
-                set:function (v) {
-                   if (this._isEnabled !== v){
-                       this._isEnabled = v;
-                       if (!!this._template){
-                           this._template.isDisabled = !this._isEnabled;
-                       }
-                       this.raisePropertyChanged('isEnabled');
-                   }
-                },
-                get:function () {
-                    return this._isEnabled;
-                }
-            },
-            template:{
-                get:function () {
-                    return this._template;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.TemplateElView = obj;
-            app.registerType('TemplateElView',obj);
-            app.registerElView('template', obj);
-        });
-
     var ButtonElView = CommandElView.extend({
             _init:function (options) {
                 this._super(options);
@@ -14891,94 +15006,6 @@ RIAPP.Application._coreModules.elview = function (app) {
             thisModule.TabsElView = obj;
             app.registerType('TabsElView',obj);
             app.registerElView('tabs', obj);
-        });
-
-    var DynaContentElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                this._dataContext = null;
-                this._template = null;
-            },
-            _templateChanged: function(){
-                this.raisePropertyChanged('templateID');
-                if (!this._template)
-                    return;
-                this.$el.empty().append(this._template.el);
-            },
-            updateTemplate: function(name){
-                var self = this;
-                try{
-                    if (!name && !!this._template){
-                        this._template.destroy();
-                        this._template = null;
-                        self._templateChanged();
-                        return;
-                    }
-                }catch(ex){
-                    this._onError(ex,this);
-                    global._throwDummy(ex);
-                }
-
-                try{
-                   if (!this._template){
-                        this._template = this._app.getType('Template').create(name);
-                        this._template.dataContext = this._dataContext;
-                        this._template.addOnPropertyChange('templateID',function(s,a){
-                            self._templateChanged();
-                        },this._objId);
-                        self._templateChanged();
-                        return;
-                    }
-
-                    this._template.templateID = name;
-                }catch(ex){
-                    this._onError(ex,this);
-                    global._throwDummy(ex);
-                }
-            },
-            destroy:function () {
-                if (!!this._template){
-                    this._template.destroy();
-                    this._template = null;
-                }
-                this._dataContext = null;
-                this._super();
-            }
-        },
-        {
-            templateID:{
-                set:function (v) {
-                    this.updateTemplate(v);
-                },
-                get:function () {
-                    if (!this._template)
-                        return null;
-                    return this._template.templateID;
-                }
-            },
-            template:{
-                get:function () {
-                    return this._template;
-                }
-            },
-            dataContext:{
-                set:function (v) {
-                    var self = this;
-                    if (this._dataContext !== v) {
-                        this._dataContext = v;
-                        if (!!this._template)
-                            this._template.dataContext = this._dataContext;
-                    }
-                },
-                get:function () {
-                    return this._dataContext;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.DynaContentElView = obj;
-            app.registerType('DynaContentElView',obj);
-            app.registerElView(global.consts.ELVIEW_NM.DYNACONT, obj);
         });
 };
 
