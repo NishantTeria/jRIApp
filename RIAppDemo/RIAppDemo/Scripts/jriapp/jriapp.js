@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.4.1",
+        version:"1.2.5.0",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -423,6 +423,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             this._utils = null;
             this._consts = null;
             this._templateLoaders = {};
+            this._templateGroups = {};
             this._promises = [];
             this._nextAppInstanceNum = 0;
 
@@ -518,6 +519,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
                 return;
             delete this._appInst[app.appName];
             delete this._templateLoaders[app.appName];
+            delete this._templateGroups[app.appName];
         },
         _destroyApps:function () {
             var self = this;
@@ -535,11 +537,10 @@ RIAPP.Global = RIAPP.BaseObject.extend({
         _checkIsDummy:function (error) {
             return !!error.isDummy;
         },
-        _registerType:function (root, name, obj) {
+        _registerObjectCore:function (root,name,obj,checkOverwrite) {
             var parts = name.split('.'),
-                parent = root['_exports'],
+                parent = root,
                 i;
-
             for (i = 0; i < parts.length - 1; i += 1) {
                 // create a property if it doesn't exist
                 if (!parent[parts[i]]) {
@@ -547,16 +548,15 @@ RIAPP.Global = RIAPP.BaseObject.extend({
                 }
                 parent = parent[parts[i]];
             }
-            var n = parts[parts.length - 1]; //the last part is the type name itself
-            if (!!parent[n])
-                throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TYPE_ALREDY_REGISTERED, name));
-            obj._typeName = name;
+            var n = parts[parts.length - 1]; //the last part is the loader name itself
+            if (!!checkOverwrite && !!parent[n])
+                throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_OBJ_ALREADY_REGISTERED, name));
             parent[n] = obj;
             return parent;
         },
-        _getType:function (root, name) {
+        _getObjectCore:function (root,name) {
             var parts = name.split('.'),
-                parent = root['_exports'],
+                parent = root,
                 i;
             for (i = 0; i < parts.length; i += 1) {
                 if (!parent[parts[i]]) {
@@ -565,6 +565,12 @@ RIAPP.Global = RIAPP.BaseObject.extend({
                 parent = parent[parts[i]];
             }
             return parent;
+        },
+        _registerType:function (root, name, obj) {
+            return this._registerObjectCore(root['_exports'],name,obj,true);
+        },
+        _getType:function (root, name) {
+            return this._getObjectCore(root['_exports'],name);
         },
         _processTemplateSections:function(root){
             var self = this;
@@ -587,47 +593,172 @@ RIAPP.Global = RIAPP.BaseObject.extend({
                     return deferred.promise();
                 };
                 if (!!app){
-                    name = app.appName+'.'+name;
+                    name = app.appName + '.' + name;
                 }
-                self._registerTemplateLoader(name,fn_loader);
+                self._registerTemplateLoader(name,{
+                    fn_loader: fn_loader
+                });
             });
+        },
+        _loadTemplatesAsync:function (fn_loader, app) {
+            var self = this, promise = fn_loader(), old = self.isLoading;
+            self._promises.push(promise);
+            if (self.isLoading !== old)
+                self.raisePropertyChanged('isLoading');
+            var deferred = self.utils.createDeferred();
+            promise.done(function(html){
+                self.utils.removeFromArray(self._promises,promise);
+                try
+                {
+                    var tmpDiv = self.document.createElement('div');
+                    tmpDiv.innerHTML = html;
+                    self._processTemplateSection(tmpDiv,app);
+                    deferred.resolve();
+                }
+                catch(ex){
+                    self._onError(ex,self);
+                    deferred.reject();
+                }
+                if (!self.isLoading)
+                    self.raisePropertyChanged('isLoading');
+            });
+            promise.fail(function(err){
+                self.utils.removeFromArray(self._promises,promise);
+                if (!self.isLoading)
+                    self.raisePropertyChanged('isLoading');
+                deferred.reject();
+                if (!!err && !!err.message){
+                    self._onError(err,self);
+                }
+                else if (!!err && !!err.responseText){
+                    self._onError(new Error(err.responseText),self);
+                }
+                else
+                    self._onError(new Error('Failed to load templates'),self);
+            });
+            return deferred.promise();
+        },
+        _registerTemplateLoaderCore:function (name,loader) {
+            return this._registerObjectCore(this._templateLoaders,name,loader,false);
+        },
+        _getTemplateLoaderCore:function(name) {
+            return this._getObjectCore(this._templateLoaders,name);
         },
         /*
          fn_loader must load template and return promise which resolves
          with loaded HTML string
          */
-        _registerTemplateLoader:function (name, fn_loader) {
+        _registerTemplateLoader:function (name, loader) {
             var self = this;
-            if (!self.utils.check_is.Function(fn_loader)){
-                throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_ASSERTION_FAILED, 'fn_loader is Function'));
+            loader = self.utils.extend(false,{
+                fn_loader: null,
+                groupName: null
+            },loader);
+
+            if (!loader.groupName && !self.utils.check_is.Function(loader.fn_loader)){
+               throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_ASSERTION_FAILED, 'fn_loader is Function'));
             }
-            var parts = name.split('.'),
-                parent = self._templateLoaders,
-                i;
-            for (i = 0; i < parts.length - 1; i += 1) {
-                // create a property if it doesn't exist
-                if (!parent[parts[i]]) {
-                    parent[parts[i]] = {};
+            var prevLoader = self._getTemplateLoaderCore(name);
+            if (!!prevLoader){
+                //can overwrite previous loader with new one, only if old did not have loader function and the new has it
+                if ((!prevLoader.fn_loader && !!prevLoader.groupName) && (!loader.groupName && !!loader.fn_loader)){
+                    return self._registerTemplateLoaderCore (name, loader);
                 }
-                parent = parent[parts[i]];
+                throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TEMPLATE_ALREADY_REGISTERED, name));
             }
-            var n = parts[parts.length - 1]; //the last part is the loader name itself
-            if (!!parent[n])
-               throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TEMPLATE_ALREDY_REGISTERED, name));
-            parent[n] = fn_loader;
-            return parent;
+            return self._registerTemplateLoaderCore (name, loader);
         },
         _getTemplateLoader:function(name) {
-            var parts = name.split('.'),
-                parent = this._templateLoaders,
-                i;
-            for (i = 0; i < parts.length; i += 1) {
-                if (!parent[parts[i]]) {
-                    return null;
+            var self = this, loader = self._getTemplateLoaderCore(name);
+            if (!loader)
+                return null;
+            if (!loader.fn_loader && !!loader.groupName){
+                var group =  self._getTemplateGroup(loader.groupName);
+                if (!group){
+                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TEMPLATE_GROUP_NOTREGISTERED, loader.groupName));
                 }
-                parent = parent[parts[i]];
+                //this function will return promise resolved with the template's html
+                return function(){
+                    if (!group.promise){ //prevents double loading
+                        //start the loading only if no loading in progress
+                        group.promise = self._loadTemplatesAsync(group.fn_loader,group.app);
+                    }
+
+                    var deferred = self.utils.createDeferred();
+                    group.promise.done(function(){
+                        try
+                        {
+                            group.promise = null;
+                            group.names.forEach(function(name){
+                                if (!!group.app){
+                                    name = group.app.appName+'.'+name;
+                                }
+                                var loader = self._getTemplateLoaderCore(name);
+                                if (!loader || !loader.fn_loader){
+                                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TEMPLATE_NOTREGISTERED, name));
+                                }
+                            });
+
+                            var loader = self._getTemplateLoaderCore(name);
+                            if (!loader || !loader.fn_loader){
+                                throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TEMPLATE_NOTREGISTERED, name));
+                            }
+                            delete self._templateGroups[loader.groupName];
+
+                            loader.fn_loader().done(function(html){
+                                deferred.resolve(html);
+                            }).fail(function(er){
+                                deferred.reject(er);
+                            });
+                        }
+                        catch(ex){
+                            deferred.reject(ex);
+                        }
+                    });
+
+                    group.promise.fail(function(er){
+                        group.promise = null;
+                        deferred.reject(er);
+                    });
+
+                   return deferred.promise();
+                };
             }
-            return parent;
+            else
+                return loader.fn_loader;
+        },
+        _registerTemplateGroup:function (groupName, group) {
+            var self = this, group = self.utils.extend(false,{
+                fn_loader: null,
+                url: null,
+                names: null,
+                app: null,
+                promise: null
+            },group);
+
+            if (!!group.url && !group.fn_loader){
+                //make function to load from this url
+                group.fn_loader =  function(){
+                    return self.utils.performAjaxGet(group.url);
+                };
+            }
+
+            var res = this._registerObjectCore(self._templateGroups,groupName,group,true);
+            group.names.forEach(function(name){
+               if (!!group.app){
+                   name = group.app.appName+'.'+name;
+               }
+               //for each template in the group register dummy loader function which has only group name
+               //when template will be requested, this dummy loader will be replaced with the real one
+               self._registerTemplateLoader(name,{
+                   groupName: groupName,
+                   fn_loader: null //no loader function
+               });
+            });
+            return res;
+        },
+        _getTemplateGroup:function (name) {
+            return this._getObjectCore(this._templateGroups,name);
         },
         _waitForNotLoading:function (callback, callbackArgs) {
             this._waitQueue.enQueue({
@@ -638,39 +769,6 @@ RIAPP.Global = RIAPP.BaseObject.extend({
                 },
                 action:callback,
                 actionArgs:callbackArgs
-            });
-        },
-        _loadTemplatesAsync:function (fn_loader, app) {
-            var self = this, promise = fn_loader(), old = self.isLoading;
-            self._promises.push(promise);
-            if (self.isLoading !== old)
-                self.raisePropertyChanged('isLoading');
-            promise.done(function(html){
-                self.utils.removeFromArray(self._promises,promise);
-                try
-                {
-                    var tmpDiv = self.document.createElement('div');
-                    tmpDiv.innerHTML = html;
-                    self._processTemplateSection(tmpDiv,app);
-                }
-                catch(ex){
-                    self._onError(ex,self);
-                }
-                if (!self.isLoading)
-                    self.raisePropertyChanged('isLoading');
-            });
-            promise.fail(function(err){
-                self.utils.removeFromArray(self._promises,promise);
-                if (!self.isLoading)
-                    self.raisePropertyChanged('isLoading');
-                if (!!err && !!err.message){
-                    self._onError(err,self);
-                }
-                else if (!!err && !!err.responseText){
-                    self._onError(new Error(err.responseText),self);
-                }
-                else
-                    self._onError(new Error('Failed to load templates'),self);
             });
         },
         reThrow:function (ex, isHandled) {
@@ -697,6 +795,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             self._modInst = {};
             self._exports = {};
             self._templateLoaders = {};
+            self._templateGroups = {};
             self.$(self.document).off(".global");
             RIAPP.Application = null;
             RIAPP.global = null;
@@ -2209,7 +2308,7 @@ RIAPP.Global._coreModules.riapp = function (global) {
                     this._converters[name] = obj;
                 }
                 else
-                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_TYPE_ALREDY_REGISTERED, name));
+                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_OBJ_ALREADY_REGISTERED, name));
             },
             getConverter:function (name) {
                 var res = this._converters[name];
@@ -2280,7 +2379,9 @@ RIAPP.Global._coreModules.riapp = function (global) {
                 with loaded HTML string
             */
             registerTemplateLoader:function (name, fn_loader) {
-                global._registerTemplateLoader(this.appName+'.'+name, fn_loader);
+                global._registerTemplateLoader(this.appName+'.'+name, {
+                    fn_loader: fn_loader
+                });
             },
             getTemplateLoader:function (name) {
                 var res = global._getTemplateLoader(this.appName+'.'+name);
@@ -2288,6 +2389,15 @@ RIAPP.Global._coreModules.riapp = function (global) {
                     res = global._getTemplateLoader(name);
                 }
                 return res;
+            },
+            registerTemplateGroup:function (name, group) {
+                var group = global.utils.extend(false,{
+                    fn_loader: null,
+                    url: null,
+                    names: null,
+                    app: this
+                },group);
+                global._registerTemplateGroup(this.appName+'.'+name, group);
             },
             toString:function () {
                 return 'Application' + this._instanceNum;
@@ -3875,6 +3985,7 @@ RIAPP.Application._coreModules.template = function (app) {
             }
             else
             {
+                debugger;
                 deferred = utils.createDeferred();
                 deferred.reject(new Error(String.format(RIAPP.ERRS.ERR_TEMPLATE_ID_INVALID, self._templateID)));
                 return deferred.promise();

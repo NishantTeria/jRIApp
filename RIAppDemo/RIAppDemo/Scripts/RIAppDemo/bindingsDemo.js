@@ -1,3 +1,4 @@
+'use strict';
 RIAPP.Application.registerModule('bindingsDemoMod', function (app) {
     var global = app.global, utils = global.utils, consts = global.consts;
     var TEXT = RIAPP.localizable.TEXT;

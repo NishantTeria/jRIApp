@@ -87,3 +87,9 @@ VERSION 1.2.4.1:
 
 1) More Optimizations from the server and the client parts to load large json payloads.
 2) Renamed two dataGrid methods _sortByColumn to sortByColumn, and _selectRows to selectRows
+
+VERSION 1.2.5.0:
+
+1) Added the feature of registering templates groups which is loaded from the server on as needed basis.
+2) Updated Single Page application demo to use templates groups as a method of templates loading.
+

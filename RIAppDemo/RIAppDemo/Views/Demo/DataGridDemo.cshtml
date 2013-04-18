@@ -116,27 +116,6 @@
                 a.product.refresh(); //need to update ThumbnailPhotoFileName
             });
 
-            //***here is two examples how to register loaders for individual templates***
-            //application registers template loaders in its own application's namespace
-            //if global loaded templates with the same name
-            //then application's loaders will take precedence over global ones
-            app.registerTemplateLoader('productEditTemplate', function(name){
-                return app.global.$.get('@Url.Action("DownloadTemplate", "Download", new {name="productEditTemplate"})');
-            });
-           
-            //using memoize pattern so there will not be repeated loads of the same template
-            app.registerTemplateLoader('sizeDisplayTemplate', 
-              (function(name){
-                    var savePromise;
-                    return function(name){
-                        if (!!savePromise)
-                            return savePromise;
-                        savePromise = app.global.$.get('@Url.Action("DownloadTemplate", "Download", new { name = "sizeDisplayTemplate" })');
-                        return savePromise;
-                    };
-                }())
-            );
-
             //example of ajax call to load lookups - first load lookups, then load products
             //at the end it displays in an alert out of band data returned from the server (see ReadProduct data service method)
             /*
@@ -156,9 +135,7 @@
 
         }; //end fn_Main
 
-    //here we load templates from the server in global scope - they will be available to every application's instance
-    RIAPP.global.loadTemplates('@Url.Action("Download", "Templates", new {name="DataGridDemo"})');
-
+   
      //this handler is invoked when the document DOM structure is loaded - the same as using jQuery.ready
     RIAPP.global.addHandler('load', function (sender, args) {
          
@@ -191,6 +168,30 @@
                     };
                 }
             });
+
+        //***here are two examples how we can register templates loader functions for individual templates***
+        //this registered function will be invoked every  time is the template with that name is needed
+        //P.S. - but the best way to load templates is to register templates' groups
+        //see the Single Page Application demo how it is done there
+            app.registerTemplateLoader('productEditTemplate', function(name){
+                return app.global.$.get('@Url.Action("DownloadTemplate", "Download", new {name="productEditTemplate"})');
+            });
+           
+        //using memoize pattern so there will not be repeated loads of the same template
+            app.registerTemplateLoader('sizeDisplayTemplate', 
+              (function(name){
+                  var savePromise;
+                  return function(name){
+                      if (!!savePromise)
+                          return savePromise;
+                      savePromise = app.global.$.get('@Url.Action("DownloadTemplate", "Download", new { name = "sizeDisplayTemplate" })');
+                        return savePromise;
+                    };
+              }())
+            );
+
+           //example of how to preload a group of templates from the server
+            app.loadTemplates('@Url.Action("Download", "Templates", new {name="DataGridDemo"})');
 
             //start application - fn_initApp will init all view models
             //after executing our fn_initApp this method performs databinding

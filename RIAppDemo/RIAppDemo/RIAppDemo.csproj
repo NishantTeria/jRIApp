@@ -279,10 +279,16 @@
     <Content Include="Views\Templates\DataGridDemo.cshtml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Views\Templates\SPADemoTemplate.cshtml" />
+    <Content Include="Views\Templates\SPADemoTemplate1.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Demo\SPADemo.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Templates\SPADemoTemplate2.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Templates\SPADemoTemplate3.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

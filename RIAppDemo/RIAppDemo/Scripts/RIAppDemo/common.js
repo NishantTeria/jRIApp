@@ -1,3 +1,4 @@
+'use strict';
 RIAPP.Application.registerModule('common', function (app) {
     var thisModule = this, global = app.global, utils = global.utils, consts = global.consts, TEXT = RIAPP.localizable.TEXT;
 

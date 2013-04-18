@@ -18,9 +18,20 @@ namespace RIAppDemo.Controllers
             return View(name);
         }
 
-        public ActionResult SPADemoTemplate()
+        public ActionResult SPADemoTemplate1()
         {
             return View(new RIAppDemo.Models.SPATemplate());
         }
+
+        public ActionResult SPADemoTemplate2()
+        {
+            return View(new RIAppDemo.Models.SPATemplate());
+        }
+
+        public ActionResult SPADemoTemplate3()
+        {
+            return View(new RIAppDemo.Models.SPATemplate());
+        }
+
     }
 }

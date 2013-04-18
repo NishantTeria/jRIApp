@@ -1,3 +1,4 @@
+'use strict';
 RIAPP.Application.registerModule('masterDetailDemo', function (app) {
     var global = app.global, utils = global.utils, consts = global.consts;
     var TEXT = RIAPP.localizable.TEXT, CustomerVM, OrderVM, OrderDetailVM, ProductVM, AddressVM;

@@ -167,8 +167,31 @@
 
             });
 
-           //we load templates from the server
-            app.loadTemplates('@Url.Action("SPADemoTemplate", "Templates")');
+        @*
+            //previously we loaded templates from the server at the start of the application - like this
+              app.loadTemplates('@Url.Action("SPADemoTemplate1", "Templates")');
+              app.loadTemplates('@Url.Action("SPADemoTemplate2", "Templates")');
+              app.loadTemplates('@Url.Action("SPADemoTemplate3", "Templates")');
+        *@
+
+        //now we can register templates group - a group of templates will be loaded when needed
+        //that is any of the template in the group will be requested by the application
+            app.registerTemplateGroup('custGroup',
+            {   url:'@Url.Action("SPADemoTemplate1", "Templates")',
+                names:["SPAcustTemplate","goToInfoColTemplate","SPAcustDetailTemplate","customerEditTemplate","customerDetailsTemplate","orderEditTemplate",
+               "orderDetEditTemplate","orderDetailsTemplate","productTemplate1","productTemplate2",
+               "prodAutocompleteTemplate"]
+            });
+      
+            app.registerTemplateGroup('custInfoGroup',
+            {   url:'@Url.Action("SPADemoTemplate2", "Templates")',
+                names:["customerInfo","salespersonTemplate1","salespersonTemplate2","salePerAutocompleteTemplate"]
+            });
+
+            app.registerTemplateGroup('custAdrGroup',
+            {   url:'@Url.Action("SPADemoTemplate3", "Templates")',
+                names:["customerAddr","addressTemplate","addAddressTemplate","linkAdrTemplate","newAdrTemplate"]
+            });
 
             app.startUp(RIAPP.global.UC.fn_Main);
         });

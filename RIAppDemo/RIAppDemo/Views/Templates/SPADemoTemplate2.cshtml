@@ -1,0 +1,115 @@
+﻿@using System.Text
+@using RIAPP.DataService
+@using RIAppDemo.BLL.DataServices
+@using RIAppDemo.Utils
+@model RIAppDemo.Models.SPATemplate
+
+@{
+    Layout = null;
+}
+
+<div id="customerInfo" data-role="template" data-bind="{this.dataContext,to=currentItem}" data-view="name=dataform">
+    <fieldset>
+        <legend><span style="font-weight: bold; color: Blue;" data-bind="{this.value,to=Name}"></span></legend>
+        <nav>
+            <ul class="nav nav-pills">
+                <li><a data-bind="{this.command,to=switchViewCommand,source=VM.customerVM}{this.commandParam,to=uiMainView.custTemplName,source=VM.customerVM}"><i class="icon-list"></i>&nbsp;Back to all customers</a></li>
+                <li><a data-bind="{this.command,to=switchDetViewCommand,source=VM.customerVM}{this.commandParam,to=uiDetailView.adrTemplName,source=VM.customerVM}"><i class="icon-envelope"></i>&nbsp;Customer's addresses</a></li>
+            </ul>
+        </nav>
+
+        <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
+            <colgroup>
+                <col style="width: 125px; border: none; text-align: left;" />
+                <col style="width: 100%; border: none; text-align: left;" />
+            </colgroup>
+            <tbody>
+                <tr>
+                    <td>ID:</td>
+                    <td><span data-content="fieldName:CustomerID,readOnly:true,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>Title:</td>
+                    <td><span data-content="fieldName:Title,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>FirstName:</td>
+                    <td><span data-content="fieldName:FirstName,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>MiddleName:</td>
+                    <td><span data-content="fieldName:MiddleName,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>LastName:</td>
+                    <td><span data-content="fieldName:LastName,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>Suffix:</td>
+                    <td><span data-content="fieldName:Suffix,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>CompanyName:</td>
+                    <td><span data-content="fieldName:CompanyName,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>SalesPerson:</td>
+                    <td><span data-content="template={displayID=salespersonTemplate1,editID=salespersonTemplate2},css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>Email:</td>
+                    <td><span data-content="fieldName=EmailAddress,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+                <tr>
+                    <td>Phone:</td>
+                    <td><span data-content="fieldName:Phone,css:{displayCss:'custInfo'}"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="float: right; margin-right: 60px;">
+            <button class="btn btn-info btn-small" style="margin: 5px;" data-bind="{this.command,to=editCommand,source=VM.customerVM}{this.isVisible,to=currentItem.isEditing,converter=notConverter,source=VM.customerVM}"><i class="icon-plus"></i>&nbsp;Edit Customer</button>
+            <button class="btn btn-info btn-small" style="width:100px;margin: 5px;" data-bind="{this.command,to=endEditCommand,source=VM.customerVM}{this.isVisible,to=currentItem.isEditing,source=VM.customerVM}">OK</button>
+            <button class="btn btn-info btn-small" style="width:100px;margin: 5px;" data-bind="{this.command,to=cancelEditCommand,source=VM.customerVM}{this.isVisible,to=currentItem.isEditing,source=VM.customerVM}">Cancel</button>
+        </div>
+    </fieldset>
+</div>
+
+<div id="salespersonTemplate1" data-role="template">
+    <span data-bind="{this.value,to=SalesPerson}"></span>
+</div>
+
+<div id="salespersonTemplate2" data-role="template">
+    <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.value,to=SalesPerson,mode=TwoWay}{this.dataContext}"
+        data-view="name=autocomplete,options={fieldName:SalesPerson,dbSetName:SalesInfo,queryName:ReadSalesInfo,templateId:salePerAutocompleteTemplate}" />
+    &nbsp;<span style="color: Gray;">&lt;--autocomplete here</span>
+</div>
+
+@*example of autocomplete implementation*@
+<div id="salePerAutocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden; background-color: White; border: 1px solid gray;">
+    <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px; width: 200px; vertical-align: top;"
+        data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">
+        <table style="position: relative" data-name="lookupGrid" data-bind="{this.dataSource,to=dbSet}"
+            data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
+            <thead>
+                <tr>
+                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:SalesPerson" ></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <div style="position: relative; text-align: left;">
+        <!--pager-->
+        <div style="float: left;" data-bind="{this.dataSource,to=dbSet}" data-view="name=pager,options={sliderSize:4,hideOnSinglePage=true}">
+        </div>
+        <div style="float: left; padding-left: 10px; padding-top: 10px;">
+            <span>Total:</span>&nbsp;<span data-bind="{this.value,to=dbSet.totalCount}"></span>
+        </div>
+    </div>
+    <br style="clear: left" />
+    <div style="position: relative; text-align: center; margin-top: 4px; margin-bottom: 4px;">
+        <a class="btn btn-info btn-small" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}"><i class="icon-ok"></i></a><span class="space"></span>
+        <a class="btn btn-info btn-small" data-name="btnCancel" data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove"></i></a>
+    </div>
+</div>
