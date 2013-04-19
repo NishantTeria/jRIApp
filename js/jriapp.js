@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.5.0",
+        version:"1.2.5.1",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -426,6 +426,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
             this._templateGroups = {};
             this._promises = [];
             this._nextAppInstanceNum = 0;
+            this._isReady = false;
 
             //initialize the required coreModules
             for (var i = 0; i < RIAPP._glob_modules.length; i += 1) {
@@ -446,8 +447,10 @@ RIAPP.Global = RIAPP.BaseObject.extend({
         _init:function () {
             var self = this;
             self.$(self.document).ready(function ($) {
+                self._isReady = true;
                 self._processTemplateSections(self.document);
                 self.raiseEvent('load', { });
+                setTimeout(function(){self.removeHandler('load',null);},0);
             });
             //when clicked outside any Selectable set _currentSelectable = null
             self.$(self.document).on("click.global", function (e) {
@@ -481,6 +484,14 @@ RIAPP.Global = RIAPP.BaseObject.extend({
         _getEventNames:function () {
             var base_events = this._super();
             return ['load','unload'].concat(base_events);
+        },
+        _addHandler:function (name, fn, namespace, prepend) {
+           var self = this;
+           if (name=='load' && self._isReady){
+              setTimeout(function(){fn(self,{});},0); //when already is ready, immediately raise the event
+              return;
+           }
+           this._super(name, fn, namespace, prepend);
         },
         _onGridAdded:function (grid) {
             var self = this, utils = self.utils, tableEl = grid.$container;
@@ -2950,7 +2961,7 @@ RIAPP.Application._coreModules.baseElView = function (app) {
                 this._super();
                 this._el = el;
                 this._$el = null;
-                this._oldDisplay = null;
+                this._oldDisplay = null; //save previous css display style
                 this._objId = 'elv' + this._app.getNewObjectID();
                 this._propChangedCommand = null;
                 this._app._setElView(this._el, this);
@@ -3979,28 +3990,50 @@ RIAPP.Application._coreModules.template = function (app) {
             var self = this, fn_loader = self._app.getTemplateLoader(name), deferred;
             if (!!fn_loader){
                 return fn_loader().then(function(html){
-                    var $tel = global.$(html), el =$tel.get(0);
-                    return el;
+                    var tmpDiv = global.document.createElement('div');
+                    tmpDiv.innerHTML = html;
+                    return tmpDiv.firstElementChild;
                 });
             }
             else
             {
-                debugger;
                 deferred = utils.createDeferred();
                 deferred.reject(new Error(String.format(RIAPP.ERRS.ERR_TEMPLATE_ID_INVALID, self._templateID)));
                 return deferred.promise();
             }
         },
+        _appendIsBusy:function(el){
+            var self = this, telvw = this._app.getType('BusyElView');
+            var vw_inst = telvw.create(el,{img:'loader2.gif'});
+            var timeOut = setTimeout(function(){
+                timeOut = null;
+                var vw = self._app._getElView(el);
+                if (!!vw && !vw._isDestroyCalled)
+                    vw.isBusy = true;
+            },250);
+            vw_inst.addOnDestroyed(function(s,a){
+                if (!!timeOut)
+                    clearTimeout(timeOut);
+            },null);
+        },
+        _removeIsBusy:function(el){
+            var telvw = this._app.getType('BusyElView'), vw = this._app._getElView(el);
+            if (!!vw && telvw.isPrototypeOf(vw)){
+                vw.destroy();
+            }
+        },
         _loadTemplate:function () {
-            var self = this, tid = self._templateID, promise;
+            var self = this, tid = self._templateID, promise, tmpDiv;
             self._unloadTemplate();
             if (!!tid) {
                 promise = self._loadTemplateElAsync(tid);
 
                 if (promise.state() == "pending"){
-                    self._el = global.document.createElement("div");
+                    self._el = tmpDiv = global.document.createElement("div");
+                    self._appendIsBusy(tmpDiv);
                     self._promise = utils.createDeferred();
                     promise.then(function(){
+                        self._removeIsBusy(tmpDiv);
                         self._promise.resolve();
                     });
                     promise = global.$.when(promise,self._promise);
@@ -14994,7 +15027,10 @@ RIAPP.Application._coreModules.elview = function (app) {
     var BusyElView = BaseElView.extend({
             _init:function (options) {
                 this._super(options);
-                this._loaderPath = global.getImagePath('loader.gif');
+                var img = 'loader.gif';
+                if (!!options.img)
+                    img = options.img;
+                this._loaderPath = global.getImagePath(img);
                 this._$loader = global.$(new Image());
                 this._$loader.css({position:"absolute", display:"none", zIndex:"10000"});
                 this._$loader.attr('src', this._loaderPath);

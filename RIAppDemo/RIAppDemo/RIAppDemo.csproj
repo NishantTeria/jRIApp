@@ -187,13 +187,13 @@
     <Content Include="Scripts\jriapp\img\headerbg.gif" />
     <Content Include="Scripts\jriapp\img\help.gif" />
     <Content Include="Scripts\jriapp\img\loader.gif" />
+    <Content Include="Scripts\jriapp\img\loader2.gif" />
     <Content Include="Scripts\jriapp\img\minus.png" />
     <Content Include="Scripts\jriapp\img\ok.png" />
     <Content Include="Scripts\jriapp\img\plus.png" />
     <Content Include="Scripts\jriapp\img\warning.png" />
     <Content Include="Scripts\jriapp\jriapp.css" />
     <Content Include="Scripts\jriapp\jriapp.js" />
-    <Content Include="Scripts\jriapp\jriapp.min.js" />
     <Content Include="Scripts\jriapp\jriapp_en.js" />
     <Content Include="Scripts\jriapp\jriapp_ru.js" />
     <Content Include="Scripts\qtip\jquery.qtip.css" />

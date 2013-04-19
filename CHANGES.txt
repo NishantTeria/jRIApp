@@ -93,3 +93,11 @@ VERSION 1.2.5.0:
 1) Added the feature of registering templates groups which is loaded from the server on as needed basis.
 2) Updated Single Page application demo to use templates groups as a method of templates loading.
 
+VERSION 1.2.5.1:
+
+1) Global's load event now executes emmediately when new load event subscriber is added
+   after jquery.ready event already had been triggered.
+
+2) When a template's downloading from the server takes more than 250ms - loader's gif appeares on the place
+   where the template should be placed when is loaded.
+
