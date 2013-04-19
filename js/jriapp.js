@@ -488,7 +488,7 @@ RIAPP.Global = RIAPP.BaseObject.extend({
         _addHandler:function (name, fn, namespace, prepend) {
            var self = this;
            if (name=='load' && self._isReady){
-              setTimeout(function(){fn(self,{});},0); //when already is ready, immediately raise the event
+              setTimeout(function(){fn.apply(self,[self,{}]);},0); //when already is ready, immediately raise the event
               return;
            }
            this._super(name, fn, namespace, prepend);
