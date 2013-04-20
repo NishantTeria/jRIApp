@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.5.1",
+        version:"1.2.5.2",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -975,6 +975,7 @@ RIAPP.Global._coreModules.consts = function (global) {
         del:127
     };
     consts.ELVIEW_NM = {DATAFORM:'dataform',DYNACONT:'dynacontent'};
+    consts.LOADER_GIFS= {SMALL:'loader2.gif',NORMAL:'loader.gif'};
     var names = Object.getOwnPropertyNames(consts);
     names.forEach(function (nm) {
         Object.freeze(consts[nm]);
@@ -3947,6 +3948,7 @@ RIAPP.Application._coreModules.template = function (app) {
             this._templateID = templateID;
             this._templElView = undefined;
             this._promise = null;
+            this._busyTimeOut = null;
             if (!!this._templateID)
                 this._loadTemplate();
         },
@@ -4003,22 +4005,23 @@ RIAPP.Application._coreModules.template = function (app) {
             }
         },
         _appendIsBusy:function(el){
-            var self = this, telvw = this._app.getType('BusyElView');
-            var vw_inst = telvw.create(el,{img:'loader2.gif'});
-            var timeOut = setTimeout(function(){
-                timeOut = null;
-                var vw = self._app._getElView(el);
-                if (!!vw && !vw._isDestroyCalled)
-                    vw.isBusy = true;
-            },250);
-            vw_inst.addOnDestroyed(function(s,a){
-                if (!!timeOut)
-                    clearTimeout(timeOut);
-            },null);
+            var self = this;
+            this._busyTimeOut = setTimeout(function(){
+                if (!self._busyTimeOut || self._isDestroyCalled)
+                    return;
+                self._busyTimeOut = null;
+                var telvw = self._app.getType('BusyElView'),  vw_inst = telvw.create(el,{img:consts.LOADER_GIFS.SMALL, delay:0});
+                vw_inst.isBusy = true;
+            },400);
         },
         _removeIsBusy:function(el){
-            var telvw = this._app.getType('BusyElView'), vw = this._app._getElView(el);
-            if (!!vw && telvw.isPrototypeOf(vw)){
+            var self = this;
+            if (!!self._busyTimeOut){
+                clearTimeout(self._busyTimeOut);
+                self._busyTimeOut = null;
+            }
+            var vw = self._app._getElView(el);
+            if (!!vw && self._app.getType('BusyElView').isPrototypeOf(vw)){
                 vw.destroy();
             }
         },
@@ -4033,8 +4036,10 @@ RIAPP.Application._coreModules.template = function (app) {
                     self._appendIsBusy(tmpDiv);
                     self._promise = utils.createDeferred();
                     promise.then(function(){
-                        self._removeIsBusy(tmpDiv);
                         self._promise.resolve();
+                    });
+                    promise.always(function(){
+                        self._removeIsBusy(tmpDiv);
                     });
                     promise = global.$.when(promise,self._promise);
                 }
@@ -4120,7 +4125,10 @@ RIAPP.Application._coreModules.template = function (app) {
         destroy:function () {
             if (this._isDestroyed)
                 return;
-            
+            if (!!this._busyTimeOut){
+                clearTimeout(this._busyTimeOut);
+                this._busyTimeOut = null;
+            }
             if (!!this._promise){
                 this._promise.reject('cancel');
                 this._promise = null;
@@ -14198,7 +14206,7 @@ RIAPP.Application._coreModules.dataform = function (app) {
 };
 
 RIAPP.Application._coreModules.elview = function (app) {
-    var thisModule = this, global = app.global, utils = global.utils, baseElViewMod = app.modules.baseElView;
+    var thisModule = this, global = app.global, utils = global.utils, consts= global.consts, baseElViewMod = app.modules.baseElView;
     var BaseElView = baseElViewMod.BaseElView,  EditableElView = baseElViewMod.EditableElView,
         CommandElView = baseElViewMod.CommandElView, _css = baseElViewMod.css;
 
@@ -15027,19 +15035,29 @@ RIAPP.Application._coreModules.elview = function (app) {
     var BusyElView = BaseElView.extend({
             _init:function (options) {
                 this._super(options);
-                var img = 'loader.gif';
+                var img;
                 if (!!options.img)
                     img = options.img;
+                else
+                    img = consts.LOADER_GIFS.NORMAL;
+                this._delay = 400;
+                this._timeOut = null;
+                if (!utils.check_is.nt(options.delay))
+                    this._delay = parseInt(options.delay);
                 this._loaderPath = global.getImagePath(img);
                 this._$loader = global.$(new Image());
                 this._$loader.css({position:"absolute", display:"none", zIndex:"10000"});
-                this._$loader.attr('src', this._loaderPath);
+                this._$loader.prop('src', this._loaderPath);
                 this._$loader.appendTo(this.el);
                 this._isBusy = false;
             },
             destroy:function () {
-                if (!this._$loader)
+                if (this._isDestroyed)
                     return;
+                if (!!this._timeOut){
+                    clearTimeout(this._timeOut);
+                    this._timeOut = null;
+                }
                 this._$loader.remove();
                 this._$loader = null;
                 this._super();
@@ -15051,22 +15069,53 @@ RIAPP.Application._coreModules.elview = function (app) {
         {
             isBusy:{
                 set:function (v) {
-                    if (v !== this._isBusy) {
-                        this._isBusy = v;
-                        if (this._isBusy) {
-                            this._$loader.show();
-                            this._$loader.position({
-                                //"my": "right top",
-                                //"at": "left bottom",
-                                "of":global.$(this.el)
-                            });
+                    var self = this, fn= function(){
+                        self._timeOut = null;
+                        self._$loader.show();
+                        self._$loader.position({
+                            //"my": "right top",
+                            //"at": "left bottom",
+                            "of":global.$(self.el)
+                        });
+                    };
+
+                    if (v !== self._isBusy) {
+                        self._isBusy = v;
+                        if (self._isBusy) {
+                           if (!!self._timeOut){
+                               clearTimeout(self._timeOut);
+                               self._timeOut = null;
+                           }
+                           if (self._delay>0){
+                               self._timeOut=setTimeout(fn,self._delay);
+                           }
+                           else
+                               fn();
                         }
-                        else
-                            this._$loader.hide();
+                        else{
+                            if (!!self._timeOut){
+                                clearTimeout(self._timeOut);
+                                self._timeOut = null;
+                            }
+                            else
+                                self._$loader.hide();
+                        }
+                        self.raisePropertyChanged('isBusy');
                     }
                 },
                 get:function () {
                     return this._isBusy;
+                }
+            },
+            delay:{
+                set:function (v) {
+                    if (v !== this._delay) {
+                        this._delay = v;
+                        this.raisePropertyChanged('delay');
+                    }
+                },
+                get:function () {
+                    return this._delay;
                 }
             }
         },

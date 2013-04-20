@@ -101,3 +101,11 @@ VERSION 1.2.5.1:
 2) When a template's downloading from the server takes more than 250ms - loader's gif appeares on the place
    where the template should be placed when is loaded.
 
+VERSION 1.2.5.2:
+
+1) Code optimizations.
+
+2) Update to BusyElView, so it has delay before showing loader gif. Default is 400 ms. And added to options for it: img and delay.
+The first to specify which gif to use, the second is delay before gif will be shown when isBusy property is set to true.
+
+
