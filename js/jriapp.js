@@ -4119,7 +4119,7 @@ RIAPP.Application._coreModules.template = function (app) {
             }
         },
         _loadTemplate:function () {
-            var self = this, tid = self._templateID, promise, tmpDiv, asyncLoad= false;
+            var self = this, tid = self._templateID, promise, deffered, tmpDiv, asyncLoad= false;
             if (!!self._promise){
                 self._promise.reject('cancel'); //cancel previous load
                 self._promise = null;
@@ -4128,30 +4128,30 @@ RIAPP.Application._coreModules.template = function (app) {
             if (!!tid) {
                 promise = self._loadTemplateElAsync(tid);
                 asyncLoad = promise.state() == "pending";
-                self._promise = utils.createDeferred();
+                self._promise = deffered =  utils.createDeferred();
                 promise.done(function(data){
-                    if (!!self._promise)
-                        self._promise.resolve(data);
+                    if (deffered.state() == "pending")
+                        deffered.resolve(data);
                 });
                 promise.fail(function(err){
-                    if (!!self._promise)
-                        self._promise.reject(err);
+                    if (deffered.state() == "pending")
+                        deffered.reject(err);
                 });
 
                 if (asyncLoad){
                     self._el = tmpDiv = global.document.createElement("div");
                     self._appendIsBusy(tmpDiv);
-                    self._promise.done(function(){
+                    deffered.done(function(){
                         self._removeIsBusy(tmpDiv);
                     });
-                    self._promise.fail(function(arg){
+                    deffered.fail(function(arg){
                         if (arg == 'cancel'){
                             self._removeIsBusy(tmpDiv);
                         }
                     });
                 }
 
-                self._promise.then(function(tel){
+                deffered.then(function(tel){
                         if (self._isDestroyCalled)
                             return;
                         self._promise = null;
