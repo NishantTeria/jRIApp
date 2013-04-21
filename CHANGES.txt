@@ -108,4 +108,7 @@ VERSION 1.2.5.2:
 2) Update to BusyElView, so it has delay before showing loader gif. Default is 400 ms. And added to options for it: img and delay.
 The first to specify which gif to use, the second is delay before gif will be shown when isBusy property is set to true.
 
+VERSION 1.2.5.3:
+
+1) Code optimizations.
 

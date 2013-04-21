@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.5.2",
+        version:"1.2.5.3",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -975,7 +975,7 @@ RIAPP.Global._coreModules.consts = function (global) {
         del:127
     };
     consts.ELVIEW_NM = {DATAFORM:'dataform',DYNACONT:'dynacontent'};
-    consts.LOADER_GIFS= {SMALL:'loader2.gif',NORMAL:'loader.gif'};
+    consts.LOADER_GIF= {SMALL:'loader2.gif',NORMAL:'loader.gif'};
     var names = Object.getOwnPropertyNames(consts);
     names.forEach(function (nm) {
         Object.freeze(consts[nm]);
@@ -3335,6 +3335,99 @@ RIAPP.Application._coreModules.baseElView = function (app) {
         });
 
 
+    var BusyElView = BaseElView.extend({
+            _init:function (options) {
+                this._super(options);
+                var img;
+                if (!!options.img)
+                    img = options.img;
+                else
+                    img = consts.LOADER_GIF.NORMAL;
+                this._delay = 400;
+                this._timeOut = null;
+                if (!utils.check_is.nt(options.delay))
+                    this._delay = parseInt(options.delay);
+                this._loaderPath = global.getImagePath(img);
+                this._$loader = global.$(new Image());
+                this._$loader.css({position:"absolute", display:"none", zIndex:"10000"});
+                this._$loader.prop('src', this._loaderPath);
+                this._$loader.appendTo(this.el);
+                this._isBusy = false;
+            },
+            destroy:function () {
+                if (this._isDestroyed)
+                    return;
+                if (!!this._timeOut){
+                    clearTimeout(this._timeOut);
+                    this._timeOut = null;
+                }
+                this._$loader.remove();
+                this._$loader = null;
+                this._super();
+            },
+            toString:function () {
+                return 'BusyElView';
+            }
+        },
+        {
+            isBusy:{
+                set:function (v) {
+                    var self = this, fn= function(){
+                        self._timeOut = null;
+                        self._$loader.show();
+                        self._$loader.position({
+                            //"my": "right top",
+                            //"at": "left bottom",
+                            "of":global.$(self.el)
+                        });
+                    };
+
+                    if (v !== self._isBusy) {
+                        self._isBusy = v;
+                        if (self._isBusy) {
+                            if (!!self._timeOut){
+                                clearTimeout(self._timeOut);
+                                self._timeOut = null;
+                            }
+                            if (self._delay>0){
+                                self._timeOut=setTimeout(fn,self._delay);
+                            }
+                            else
+                                fn();
+                        }
+                        else{
+                            if (!!self._timeOut){
+                                clearTimeout(self._timeOut);
+                                self._timeOut = null;
+                            }
+                            else
+                                self._$loader.hide();
+                        }
+                        self.raisePropertyChanged('isBusy');
+                    }
+                },
+                get:function () {
+                    return this._isBusy;
+                }
+            },
+            delay:{
+                set:function (v) {
+                    if (v !== this._delay) {
+                        this._delay = v;
+                        this.raisePropertyChanged('delay');
+                    }
+                },
+                get:function () {
+                    return this._delay;
+                }
+            }
+        },
+        function (obj) {
+            thisModule.BusyElView = obj;
+            app.registerType('BusyElView',obj);
+            app.registerElView('busy_indicator', obj);
+        });
+
     var DynaContentElView = BaseElView.extend({
             _init:function (options) {
                 this._super(options);
@@ -3933,8 +4026,8 @@ RIAPP.Application._coreModules.binding = function (app) {
 
 RIAPP.Application._coreModules.template = function (app) {
     var thisModule = this, global = app.global, utils = global.utils, consts = global.consts,
-        Binding = app.modules.binding.Binding, BaseElView = app.modules.baseElView.BaseElView,
-        TemplateElView = app.modules.baseElView.TemplateElView;
+        Binding = app.modules.binding.Binding, baseElViewMod = app.modules.baseElView, BaseElView = baseElViewMod.BaseElView,
+        BusyElView = baseElViewMod.BusyElView, TemplateElView = baseElViewMod.TemplateElView;
 
     /*define Template class and register its type*/
     thisModule.Template = RIAPP.BaseObject.extend({
@@ -4010,7 +4103,7 @@ RIAPP.Application._coreModules.template = function (app) {
                 if (!self._busyTimeOut || self._isDestroyCalled)
                     return;
                 self._busyTimeOut = null;
-                var telvw = self._app.getType('BusyElView'),  vw_inst = telvw.create(el,{img:consts.LOADER_GIFS.SMALL, delay:0});
+                var vw_inst = BusyElView.create(el,{img:consts.LOADER_GIF.SMALL, delay:0});
                 vw_inst.isBusy = true;
             },400);
         },
@@ -4021,33 +4114,46 @@ RIAPP.Application._coreModules.template = function (app) {
                 self._busyTimeOut = null;
             }
             var vw = self._app._getElView(el);
-            if (!!vw && self._app.getType('BusyElView').isPrototypeOf(vw)){
+            if (!!vw && BusyElView.isPrototypeOf(vw)){
                 vw.destroy();
             }
         },
         _loadTemplate:function () {
-            var self = this, tid = self._templateID, promise, tmpDiv;
+            var self = this, tid = self._templateID, promise, tmpDiv, asyncLoad= false;
+            if (!!self._promise){
+                self._promise.reject('cancel'); //cancel previous load
+                self._promise = null;
+            }
             self._unloadTemplate();
             if (!!tid) {
                 promise = self._loadTemplateElAsync(tid);
+                asyncLoad = promise.state() == "pending";
+                self._promise = utils.createDeferred();
+                promise.done(function(data){
+                    if (!!self._promise)
+                        self._promise.resolve(data);
+                });
+                promise.fail(function(err){
+                    if (!!self._promise)
+                        self._promise.reject(err);
+                });
 
-                if (promise.state() == "pending"){
+                if (asyncLoad){
                     self._el = tmpDiv = global.document.createElement("div");
                     self._appendIsBusy(tmpDiv);
-                    self._promise = utils.createDeferred();
-                    promise.then(function(){
-                        self._promise.resolve();
-                    });
-                    promise.always(function(){
+                    self._promise.done(function(){
                         self._removeIsBusy(tmpDiv);
                     });
-                    promise = global.$.when(promise,self._promise);
+                    self._promise.fail(function(arg){
+                        if (arg == 'cancel'){
+                            self._removeIsBusy(tmpDiv);
+                        }
+                    });
                 }
 
-                promise.then(function(tel){
+                self._promise.then(function(tel){
                         if (self._isDestroyCalled)
                             return;
-                        var asyncLoad = !!self._promise;
                         self._promise = null;
                         if (!tel){
                             self._unloadTemplate();
@@ -4068,12 +4174,24 @@ RIAPP.Application._coreModules.template = function (app) {
                         if (self._isDestroyCalled)
                             return;
                         self._promise = null;
-                        if (arg == 'cancel')
+                        if (arg == 'cancel'){
                             return;
-                        if (!!arg && !!arg.message)
-                            self._app._onError(arg,self);
-                        else
-                            self._app._onError(new Error(String.format(RIAPP.ERRS.ERR_TEMPLATE_ID_INVALID, self._templateID)),self);
+                        }
+                        var ex;
+                        if (!!arg)
+                        {
+                            if (!!arg.message)
+                               ex = arg;
+                            else if (!!arg.statusText){
+                                ex = new Error(arg.statusText);
+                            }
+                            else if (utils.check_is.String(arg)){
+                                ex = new Error(arg);
+                            }
+                        }
+                        if (!ex)
+                            ex = new Error(String.format(RIAPP.ERRS.ERR_TEMPLATE_ID_INVALID, self._templateID));
+                        self._app._onError(ex,self);
                     });
             }
         },
@@ -4174,10 +4292,6 @@ RIAPP.Application._coreModules.template = function (app) {
         templateID:{
             set:function (v) {
                 if (this._templateID !== v) {
-                    if (!!this._promise){
-                        this._promise.reject('cancel'); //cancel previous load
-                        this._promise = null;
-                    }
                     this._templateID = v;
                     this._loadTemplate();
                     this.raisePropertyChanged('templateID');
@@ -15029,100 +15143,6 @@ RIAPP.Application._coreModules.elview = function (app) {
             thisModule.ImgElView = obj;
             app.registerType('ImgElView',obj);
             app.registerElView('img', obj);
-        });
-
-
-    var BusyElView = BaseElView.extend({
-            _init:function (options) {
-                this._super(options);
-                var img;
-                if (!!options.img)
-                    img = options.img;
-                else
-                    img = consts.LOADER_GIFS.NORMAL;
-                this._delay = 400;
-                this._timeOut = null;
-                if (!utils.check_is.nt(options.delay))
-                    this._delay = parseInt(options.delay);
-                this._loaderPath = global.getImagePath(img);
-                this._$loader = global.$(new Image());
-                this._$loader.css({position:"absolute", display:"none", zIndex:"10000"});
-                this._$loader.prop('src', this._loaderPath);
-                this._$loader.appendTo(this.el);
-                this._isBusy = false;
-            },
-            destroy:function () {
-                if (this._isDestroyed)
-                    return;
-                if (!!this._timeOut){
-                    clearTimeout(this._timeOut);
-                    this._timeOut = null;
-                }
-                this._$loader.remove();
-                this._$loader = null;
-                this._super();
-            },
-            toString:function () {
-                return 'BusyElView';
-            }
-        },
-        {
-            isBusy:{
-                set:function (v) {
-                    var self = this, fn= function(){
-                        self._timeOut = null;
-                        self._$loader.show();
-                        self._$loader.position({
-                            //"my": "right top",
-                            //"at": "left bottom",
-                            "of":global.$(self.el)
-                        });
-                    };
-
-                    if (v !== self._isBusy) {
-                        self._isBusy = v;
-                        if (self._isBusy) {
-                           if (!!self._timeOut){
-                               clearTimeout(self._timeOut);
-                               self._timeOut = null;
-                           }
-                           if (self._delay>0){
-                               self._timeOut=setTimeout(fn,self._delay);
-                           }
-                           else
-                               fn();
-                        }
-                        else{
-                            if (!!self._timeOut){
-                                clearTimeout(self._timeOut);
-                                self._timeOut = null;
-                            }
-                            else
-                                self._$loader.hide();
-                        }
-                        self.raisePropertyChanged('isBusy');
-                    }
-                },
-                get:function () {
-                    return this._isBusy;
-                }
-            },
-            delay:{
-                set:function (v) {
-                    if (v !== this._delay) {
-                        this._delay = v;
-                        this.raisePropertyChanged('delay');
-                    }
-                },
-                get:function () {
-                    return this._delay;
-                }
-            }
-        },
-        function (obj) {
-            thisModule.BusyElView = obj;
-            app.registerType('BusyElView',obj);
-            app.registerElView('busy_indicator', obj);
         });
 
 
