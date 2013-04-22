@@ -114,7 +114,12 @@ VERSION 1.2.5.3:
 
 VERSION 1.2.6.0:
 
-1) Templates on loading always appended to template's container element.
-2) Styles updates to comply to change #1
-3) Bug fix in Data services incrementtal result - key values was not javascript escaped.
+1) Templates on their loading always appended to a template's container div element with css class: ria-template-container.
+2) Demo application css styles updates to comply to change #1
+3) Bug fix in Data services incrementtal result - row's key value was not javascript escaped.
 4) Example autocomplete was updated to comply to change #1
+
+VERSION 1.2.6.1:
+
+1) testing, rechecking and optimization of changes in version 1.2.6.0 with some bug fixes
+

@@ -94,7 +94,7 @@
         <input type="text" class="span2" data-bind="{this.value,to=searchString,mode=TwoWay}{this.toolTip,to=searchToolTip}" />
         <a class="btn btn-info btn-small" data-bind="{this.command,to=execSearchCommand}"><i class="icon-search"></i></a>
     </div>
-    <div style="width: 100%; height: 410px;">
+    <div style="width: 100%; height: 400px;">
         <table style="border: none; border-collapse: collapse; table-layout: fixed;">
             <tr>
                 <!--left section - already linked to customer addresses -->
@@ -164,7 +164,7 @@
     </div>
 </div>
 
-<div id="newAdrTemplate" data-role="template" data-name="newAddress" style="width: 95%; margin:4px;" >
+<div id="newAdrTemplate" data-role="template" data-name="newAddress" style="width: 95%; margin:4px; max-width:500px;" >
     <form action="#" style="width: 100%" data-bind="{this.dataContext,to=newAddress}"
         data-view="name=dataform">
         <dl class="dl-horizontal">

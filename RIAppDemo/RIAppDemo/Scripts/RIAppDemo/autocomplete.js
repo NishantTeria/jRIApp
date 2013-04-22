@@ -77,6 +77,8 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                     "height": this._height
                 });
                 this._$dropDown.append(this._template.el);
+                this._template.el.style.height = '100%';
+                this._template.el.style.width = '100%';
                 this._lookupGrid = null;
                 var gridElView = this._findElemViewInTemplate('lookupGrid');
                 if (!!gridElView){

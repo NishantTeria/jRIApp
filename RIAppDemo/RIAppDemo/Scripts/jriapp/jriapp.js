@@ -398,10 +398,11 @@ RIAPP.BaseObject = {
 RIAPP._glob_modules = ['array_ext', 'consts', 'errors', 'defaults', 'utils', 'riapp'];
 RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template', 'mvvm', 'collection', 'db', 'listbox',
     'datadialog', 'baseContent', 'datagrid', 'pager', 'stackpanel', 'dataform', 'elview', 'content'];
+//css class for the section to hold data templates embedded into the page
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.6.0",
+        version:"1.2.6.1",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -13894,9 +13895,9 @@ RIAPP.Application._coreModules.listbox = function (app) {
 
 RIAPP.Application._coreModules.dataform = function (app) {
     var thisModule = this, global = app.global, utils = global.utils, consts = global.consts,
-        Binding = app.modules.binding.Binding,  BaseElView = app.modules.baseElView.BaseElView,
+        Binding = app.modules.binding.Binding, baseElViewMod = app.modules.baseElView, BaseElView = baseElViewMod.BaseElView,
         _css = {
-        dataform:'ria-dataform'
+            dataform:'ria-dataform'
         }, ERRTEXT = RIAPP.localizable.VALIDATE;
     Object.freeze(_css);
     thisModule.css = _css;
@@ -14051,12 +14052,12 @@ RIAPP.Application._coreModules.dataform = function (app) {
                     return;
                 dataContext.addOnDestroyed(function (s, a) {
                     self.dataContext = null;
-                }, this._objId);
+                }, self._objId);
 
                 if (this._supportEdit) {
                     dataContext.addOnPropertyChange('isEditing', function (sender, args) {
                         self.isEditing = sender.isEditing;
-                    }, this._objId);
+                    }, self._objId);
                 }
 
                 if (!!this._collection) {
@@ -14087,13 +14088,6 @@ RIAPP.Application._coreModules.dataform = function (app) {
                     this._lfTime = null;
                 }
                 this._contentCreated = false;
-            },
-            _onError:function (error, source) {
-                var isHandled = this._super(error, source);
-                if (!isHandled) {
-                    return this._app._onError(error, source);
-                }
-                return isHandled;
             },
             destroy:function () {
                 if (this._isDestroyed)
@@ -14267,7 +14261,7 @@ RIAPP.Application._coreModules.dataform = function (app) {
                     $img = global.$('<img name="error_info" alt="error_info" class="error-info" />');
                     $el.prepend($img);
                     $img.get(0).src = image_src;
-                    utils.addToolTip($img, this._getErrorTipInfo(errors), _css.errorTip);
+                    utils.addToolTip($img, this._getErrorTipInfo(errors), baseElViewMod.css.errorTip);
                     this._setFieldError(true);
                 }
                 else {
@@ -14299,8 +14293,8 @@ RIAPP.Application._coreModules.dataform = function (app) {
                         this._form.addOnDestroyed(function () {
                             self._form = null;
                         });
-                        this.form.addOnPropertyChange('validationErrors', function (item, args) {
-                            self.validationErrors = item.validationErrors;
+                        this.form.addOnPropertyChange('validationErrors', function (form, args) {
+                            self.validationErrors = form.validationErrors;
                         }, this._objId);
                         self.invokePropChanged('form');
                     }

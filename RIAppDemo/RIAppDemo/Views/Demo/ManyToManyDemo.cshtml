@@ -259,10 +259,10 @@
     </div>
 
     <div id="rightPanel">
-        <div id="customerInfo" data-bind="{this.dataContext,to=currentItem,source=VM.customerVM}" data-view="name=dataform">
+        <div id="customerInfo" style="max-width:800px;" data-bind="{this.dataContext,to=currentItem,source=VM.customerVM}" data-view="name=dataform">
             <fieldset>
                 <legend>Customer Info</legend>
-                <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
+                <table style="width: 100%; border: none; table-layout: fixed; background-color: transparent;">
                     <colgroup>
                         <col style="width: 125px; border: none; text-align: left;" />
                         <col style="width: 100%; border: none; text-align: left;" />
@@ -314,7 +314,7 @@
             </fieldset>
         </div>
         <!--customerDetails-->
-        <div id="customerAddr">
+        <div id="customerAddr" style="max-width:800px;">
             <fieldset>
                 <legend>Customer Addresses</legend>
                 <table data-app='default' data-name="gridCustAddr" data-bind="{this.dataSource,to=custAdressView,source=VM.customerVM.customerAddressVM}" data-view="options={wrapCss:addressTableWrap,headerCss:addressTableHeader}">
@@ -355,106 +355,86 @@
 
 @section RiaTemplates
 {
-    <div id="customerEditTemplate" style="width: 95%; margin:4px;" data-role="template">
+    <div id="customerEditTemplate" style="width: 100%; margin:0px;" data-role="template">
         <form action="#" style="width: 100%" data-bind="{this.dataContext}" data-view="name=dataform">
-        <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
-            <colgroup>
-                <col style="width: 125px; border: none; text-align: left;" />
-                <col style="width: 100%; border: none; text-align: left;" />
-            </colgroup>
-            <tbody>
-                <tr>
-                    <td>
-                        ID:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:CustomerID,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        Title:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:Title,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        FirstName:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:FirstName,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        MiddleName:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:MiddleName,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        LastName:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:LastName,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        Suffix:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:Suffix,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        CompanyName:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:CompanyName,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        SalesPerson:
-                    </td>
-                    <td>
-                        <span data-content="template={displayID=salespersonTemplate1,editID=salespersonTemplate2},css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        Email:
-                    </td>
-                    <td>
-                        <span data-content="fieldName=EmailAddress,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        Phone:
-                    </td>
-                    <td>
-                        <span data-content="fieldName:Phone,css:{displayCss:'custInfo',editCss:'custEdit'}">
-                        </span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+            <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
+                <colgroup>
+                    <col style="width: 125px; border: none; text-align: left;" />
+                    <col style="width: 100%; border: none; text-align: left;" />
+                </colgroup>
+                <tbody>
+                    <tr>
+                        <td>ID:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:CustomerID,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Title:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:Title,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>FirstName:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:FirstName,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>MiddleName:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:MiddleName,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>LastName:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:LastName,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Suffix:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:Suffix,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>CompanyName:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:CompanyName,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SalesPerson:
+                        </td>
+                        <td>
+                            <span data-content="template={displayID=salespersonTemplate1,editID=salespersonTemplate2},css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Email:
+                        </td>
+                        <td>
+                            <span data-content="fieldName=EmailAddress,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Phone:
+                        </td>
+                        <td>
+                            <span data-content="fieldName:Phone,css:{displayCss:'custInfo',editCss:'custEdit'}"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </form>
     </div>
 
@@ -551,7 +531,7 @@
                 <a class="btn btn-info btn-small" data-bind="{this.command,to=execSearchCommand}"><i
                     class="icon-search"></i></a>
             </div>
-            <div style="width: 100%; height: 410px;">
+            <div style="width: 100%; height: 400px;">
                 <table style="border: none; border-collapse: collapse; table-layout: fixed;">
                     <tr>
                         <!--left section - already linked to customer addresses -->
