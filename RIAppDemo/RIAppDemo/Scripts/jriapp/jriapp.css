@@ -9,13 +9,13 @@
 }
 
 .ria-template-container {
-    width: auto;
-    height: auto;
+    width: inherit;
+    height: inherit;
     border-style: none;
     margin: 0px;
     padding: 0px;
     overflow: inherit;
-    position: relative;
+    position: inherit;
 }
 
 .ria-content-field {}
