@@ -79,20 +79,20 @@
 </div>
 
 <div id="salespersonTemplate2" data-role="template">
-    <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.value,to=SalesPerson,mode=TwoWay}{this.dataContext}"
-        data-view="name=autocomplete,options={fieldName:SalesPerson,dbSetName:SalesInfo,queryName:ReadSalesInfo,templateId:salePerAutocompleteTemplate}" />
+    <input type="text" style="margin-left: 0px; width: 200px;" data-bind="{this.value,to=SalesPerson,mode=TwoWay}{this.dataContext}"
+        data-view="name=autocomplete,options={fieldName:SalesPerson,dbSetName:SalesInfo,queryName:ReadSalesInfo,templateId:salePerAutocompleteTemplate,width:200px,height:200px}" />
     &nbsp;<span style="color: Gray;">&lt;--autocomplete here</span>
 </div>
 
 @*example of autocomplete implementation*@
-<div id="salePerAutocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden; background-color: White; border: 1px solid gray;">
-    <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px; width: 200px; vertical-align: top;"
+<div id="salePerAutocompleteTemplate" data-role="template" style="height: 97%; margin: 0px; padding: 2px; position: relative;">
+    <div style="position: relative; margin-left: 1px; vertical-align: top;"
         data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">
         <table style="position: relative" data-name="lookupGrid" data-bind="{this.dataSource,to=dbSet}"
-            data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
+            data-view="options={wrapCss:autocompleteSalePTableWrap,headerCss:autocompleteTableHeader}">
             <thead>
                 <tr>
-                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:SalesPerson" ></th>
+                    <th data-column="width:100%,sortable:true,title:Name" data-content="fieldName:SalesPerson"></th>
                 </tr>
             </thead>
             <tbody>
@@ -108,8 +108,8 @@
         </div>
     </div>
     <br style="clear: left" />
-    <div style="position: relative; text-align: center; margin-top: 4px; margin-bottom: 4px;">
-        <a class="btn btn-info btn-small" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}"><i class="icon-ok"></i></a><span class="space"></span>
-        <a class="btn btn-info btn-small" data-name="btnCancel" data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove"></i></a>
+    <div style="position: absolute; left: 15px; text-align: center; margin-top: 4px; bottom: 4px;">
+        <a class="btn btn-info btn-small" style="width: 50px;" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}"><i class="icon-ok"></i></a><span class="space"></span>
+        <a class="btn btn-info btn-small" style="width: 50px;" data-name="btnCancel" data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove"></i></a>
     </div>
 </div>

@@ -35,7 +35,23 @@
 #demoContent fieldset > legend {color:Blue; font-weight:bold;}
 #demoContent .radioItem {display:inline-block; margin:4px; padding:4px;}
 
-.stackPanelItem { width:170px;}
+.stackPanelItemV { 
+    width:120px; 
+    height:40px;
+    margin: 3px 0px 3px 0px;
+    padding:4px;
+    background-color:ButtonFace;
+    color: ButtonText;
+}
+
+.stackPanelItemH {
+    width:140px; height:35px; 
+    margin:0px 3px 0px 3px;
+    padding:4px;
+    background-color:ButtonFace;
+    color: ButtonText;
+}
+
 .stackPanelItem fieldset {border-radius: 5px;}
 .stackPanelItem fieldset legend {color:Blue; font-weight:bold;}
 </style>
@@ -101,15 +117,21 @@
 </fieldset>
     <h3>Demo of vertical and horizontal StackPanel &nbsp;(count:&nbsp;<span data-bind="{this.value,to=historyList.count,source=VM.demoVM}"></span>)</h3>
     <!--example of using stackpanel for vertical and horizontal list view-->
-    <div style="border: 1px solid gray;float:left;width:180px; min-height:48px; max-height:250px; overflow:auto;" data-bind="{this.dataSource,to=historyList,source=VM.demoVM}" data-view="name=stackpanel,options:{templateID:stackPanelItemTemplate,orientation:vertical}"></div>
-    <div style="border: 1px solid gray;float:left;min-height:48px; min-width:170px; max-width:650px; overflow:auto; margin-left:15px;" data-bind="{this.dataSource,to=historyList,source=VM.demoVM}" data-view="name=stackpanel,options:{templateID:stackPanelItemTemplate,orientation:horizontal}"></div>
+    <div style="border: 1px solid gray;float:left;width:150px; min-height:65px; max-height:250px; overflow:auto;" data-bind="{this.dataSource,to=historyList,source=VM.demoVM}" data-view="name=stackpanel,options:{templateID:stackPanelItemTemplateV,orientation:vertical}"></div>
+    <div style="border: 1px solid gray;float:left;height:65px; min-width:145px; max-width:650px; overflow:auto; margin-left:15px;" data-bind="{this.dataSource,to=historyList,source=VM.demoVM}" data-view="name=stackpanel,options:{templateID:stackPanelItemTemplateH,orientation:horizontal}"></div>
     <br style="clear:both" />
     <button class="btn btn-info btn-small" style="margin:5px 5px 5px 0px;" data-bind="{this.command,to=clearListCommand,mode=OneWay,source=VM.demoVM}">Clear list</button>
 </div>
 
 @section RiaTemplates
 {
-    <div id="stackPanelItemTemplate" data-role="template" class="stackPanelItem" style="width: 170px; padding: 4px;">
+     <div id="stackPanelItemTemplateV" data-role="template" class="stackPanelItemV">
+        <strong><span style="color: Blue;" data-bind="{this.value,to=radioValue}"></span>
+        </strong>
+        <br />
+        Time:&nbsp;<span data-bind="{this.value,to=time,converter=dateTimeConverter,converterParam='HH:mm:ss'}"></span>
+    </div>
+    <div id="stackPanelItemTemplateH" data-role="template" class="stackPanelItemH">
         <strong><span style="color: Blue;" data-bind="{this.value,to=radioValue}"></span>
         </strong>
         <br />

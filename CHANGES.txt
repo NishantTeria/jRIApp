@@ -112,3 +112,9 @@ VERSION 1.2.5.3:
 
 1) Code optimizations.
 
+VERSION 1.2.6.0:
+
+1) Templates on loading always appended to template's container element.
+2) Styles updates to comply to change #1
+3) Bug fix in Data services incrementtal result - key values was not javascript escaped.
+4) Example autocomplete was updated to comply to change #1

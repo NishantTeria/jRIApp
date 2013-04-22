@@ -83,7 +83,7 @@
     }
 
     .autocompleteTableWrap {
-        max-height: 150px;
+        height: 220px;
         width: 100%;
         margin: 0px;
         padding: 0px;
@@ -189,7 +189,7 @@
  
 @section RiaTemplates
 {
-    <div id="customerEditTemplate" data-role="template">
+    <div id="customerEditTemplate" style="width: 95%; margin:4px; font-size: 12px;" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
                 <colgroup>
@@ -293,7 +293,7 @@
     </div>
 
     @*Grid details template for customer's orders*@
-    <div id="customerDetailsTemplate" data-role="template">
+    <div id="customerDetailsTemplate" style="width: 95%; margin:4px; font-size: 12px;" data-role="template">
         <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM"
             data-view="name='tabs'">
             <div id="detailsTabs">
@@ -376,7 +376,7 @@
         </div>
     </div>
 
-    <div id="orderEditTemplate" data-role="template">
+    <div id="orderEditTemplate" style="width: 95%; margin:4px; font-size: 12px;" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
                 <colgroup>
@@ -520,7 +520,7 @@
         </div>
     </div>
 
-    <div id="orderDetEditTemplate" data-role="template">
+    <div id="orderDetEditTemplate" style="width: 95%; margin:4px; font-size: 12px;" data-role="template">
         <div style="width: 100%" data-bind="{this.dataContext,mode=OneWay}" data-view="name=dataform">
             <table style="width: 95%; border: none; table-layout: fixed; background-color: transparent;">
                 <colgroup>
@@ -583,7 +583,7 @@
     </div>
 
     @*Grid details template for order Details*@
-    <div id="orderDetailsTemplate" data-role="template">
+    <div id="orderDetailsTemplate" style="width: 95%; margin:4px; font-size: 12px;" data-role="template">
         <div data-name="tabs" style="margin: 5px; padding: 5px; width: 95%;" data-bind="this.tabsEventCommand,to=tabsEventCommand,source=VM.customerVM.ordersVM"  data-view="name='tabs'">
                <div id="odeTabs">
                 <ul>
@@ -683,13 +683,13 @@
 
     <div id="productTemplate2" data-role="template">
         autocomplete here-->
-        <input type="text" class="span4" style="margin-left: 0px;" data-bind="{this.dataContext}"
-            data-view="name=productACV,options={fieldName:Name,dbSetName:LookUpProduct,queryName:ReadProductLookUp,templateId:prodAutocompleteTemplate}" />&nbsp;<b>*</b>
+        <input type="text" style="margin-left: 0px; width:300px;" data-bind="{this.dataContext}"
+            data-view="name=productACV,options={fieldName:Name,dbSetName:LookUpProduct,queryName:ReadProductLookUp,templateId:prodAutocompleteTemplate,width:300px}" />&nbsp;<b>*</b>
     </div>
 
     @*example of autocomplete implementation*@
-    <div id="prodAutocompleteTemplate" data-role="template" style="position: absolute; z-index: 10000; visibility: hidden; background-color: White; border: 1px solid gray;">
-        <div class="span4" style="position: relative; margin-left: 1px; max-height: 200px; vertical-align: top;"
+    <div id="prodAutocompleteTemplate" data-role="template" style="height:97%; margin:0px; padding:2px;position: relative;">
+        <div style="position: relative; margin-left: 1px; vertical-align: top;"
             data-bind="{this.isBusy,to=isLoading}" data-view="name=busy_indicator">
             <table style="position: relative" data-name="lookupGrid" data-bind="{this.dataSource,to=dbSet}"
                 data-view="options={wrapCss:autocompleteTableWrap,headerCss:autocompleteTableHeader}">
@@ -711,9 +711,9 @@
             </div>
         </div>
         <br style="clear: left" />
-        <div style="position: relative; text-align: center; margin-top: 4px; margin-bottom: 4px;">
-            <a class="btn btn-info btn-small" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}"><i class="icon-ok"></i></a><span class="space"></span>
-            <a class="btn btn-info btn-small" data-name="btnCancel" data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove"></i></a>
+        <div style="position: absolute; left:15px; text-align: center; margin-top: 4px; bottom:4px;">
+            <a class="btn btn-info btn-small" style="width:100px;" data-name="btnOk" data-bind="{this.text,to=txtOk,source=localizable.TEXT}"><i class="icon-ok"></i></a><span class="space"></span>
+            <a class="btn btn-info btn-small" style="width:100px;" data-name="btnCancel" data-bind="{this.text,to=txtCancel,source=localizable.TEXT}"><i class="icon-remove"></i></a>
         </div>
     </div>
 }

@@ -8,7 +8,7 @@
     Layout = null;
 }
 
-<div id="customerAddr" data-role="template">
+<div id="customerAddr" data-role="template" style="width: 95%; margin:4px;">
     <fieldset>
         <legend>Addresses of <span style="font-weight: bold; color: Blue;" data-bind="{this.value,to=currentItem.Name}"></span></legend>
         <nav>
@@ -40,7 +40,7 @@
 </div>
 
 @*used for display of customer's address*@
-<div id="addressTemplate" data-role="template" class="addressTemplate">
+<div id="addressTemplate" data-role="template" class="addressTemplate" style="width: 95%; margin:4px;">
     <fieldset>
         <legend style="margin-bottom: 4px; font-size: 14px; font-weight: bold;"><span class="address" data-bind="{this.value,to=AddressType}"></span></legend>
   <!-- we can use dataform to assign to it datacontext that is other than inside this template.
@@ -80,7 +80,7 @@
 
 <!--addressTemplate-->
 @*used for managing of customer's addresses in many to many relationship*@
-<div id="addAddressTemplate" data-role="template">
+<div id="addAddressTemplate" data-role="template" style="width: 95%; margin:4px;">
     <div style="margin-bottom: 4px;">
         <span>Customer:</span>&nbsp;<span style="font-weight: bold; color: Blue;" data-bind="{this.value,to=customer.Name}"></span>
     </div>
@@ -94,7 +94,7 @@
         <input type="text" class="span2" data-bind="{this.value,to=searchString,mode=TwoWay}{this.toolTip,to=searchToolTip}" />
         <a class="btn btn-info btn-small" data-bind="{this.command,to=execSearchCommand}"><i class="icon-search"></i></a>
     </div>
-    <div style="width: 100%; height: 420px;">
+    <div style="width: 100%; height: 410px;">
         <table style="border: none; border-collapse: collapse; table-layout: fixed;">
             <tr>
                 <!--left section - already linked to customer addresses -->
@@ -164,7 +164,7 @@
     </div>
 </div>
 
-<div id="newAdrTemplate" data-role="template" data-name="newAddress" >
+<div id="newAdrTemplate" data-role="template" data-name="newAddress" style="width: 95%; margin:4px;" >
     <form action="#" style="width: 100%" data-bind="{this.dataContext,to=newAddress}"
         data-view="name=dataform">
         <dl class="dl-horizontal">

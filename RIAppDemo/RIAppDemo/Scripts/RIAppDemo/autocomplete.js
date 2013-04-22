@@ -41,10 +41,12 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 this._prevText= null;
                 this._selectedItem = null;
                 this._template = null;
-                this._$template = null;
+                this._$dropDown = null;
                 this._loadTimeout = null;
                 this._dataContext = null;
                 this._isLoading = false;
+                this._width = options.width || '200px';
+                this._height = options.height || '300px';
                 this._$dlg= null;
                 var $el = this.$el;
 
@@ -64,7 +66,17 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 this._isOpen = false;
                 this._createDbSet();
                 this._template = this._createTemplate();
-                this._$template = global.$(this._template.el);
+                this._$dropDown = global.$(global.document.createElement("div"));
+                this._$dropDown.css({
+                    "position": "absolute",
+                    "z-index": "10000",
+                    "visibility": "hidden",
+                    "background-color": "White",
+                    "border": "1px solid gray",
+                    "width": this._width,
+                    "height": this._height
+                });
+                this._$dropDown.append(this._template.el);
                 this._lookupGrid = null;
                 var gridElView = this._findElemViewInTemplate('lookupGrid');
                 if (!!gridElView){
@@ -79,7 +91,7 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 global.$(this._btnCancel).click(function(){
                     self._hide();
                 });
-                global.document.body.appendChild(this._template.el);
+                global.document.body.appendChild(this._$dropDown.get(0));
             },
             _findElemViewInTemplate: function(name){
                 //look by data-name attribute value
@@ -143,7 +155,7 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 this.value = this.currentSelection;
             },
             _updatePosition: function(){
-                this._$template.position({
+                this._$dropDown.position({
                     my: "left top",
                     at: "left bottom",
                     of: global.$(this.el),
@@ -169,8 +181,8 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 });
 
                 this._updatePosition();
-                this._$template.css({visibility: "visible", display: "none"});
-                this._$template.slideDown('medium');
+                this._$dropDown.css({visibility: "visible", display: "none"});
+                this._$dropDown.slideDown('medium');
 
                 if (!!this._lookupGrid){
                     this._lookupGrid.addHandler('cell_dblclicked',function(s,a){
@@ -198,10 +210,10 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                     this._lookupGrid.removeNSHandlers(this._objId);
                 }
 
-                this._$template.slideUp('medium', function(){
+                this._$dropDown.slideUp('medium', function(){
                     if (self._isDestroyCalled)
                         return;
-                    self._$template.css({visibility: "hidden", display: ""});
+                    self._$dropDown.css({visibility: "hidden", display: ""});
                 });
                 this._isOpen = false;
                 this._onHide();
@@ -230,7 +242,7 @@ RIAPP.Application.registerModule('autocompleteModule', function (app) {
                 if (!!this._template){
                     this._template.destroy();
                     this._template = null;
-                    this._$template = null;
+                    this._$dropDown = null;
                 }
                 this._dbSet = null;
                 this._dataContext = null;

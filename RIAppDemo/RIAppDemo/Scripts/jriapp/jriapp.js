@@ -401,7 +401,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.5.3",
+        version:"1.2.6.0",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -4029,6 +4029,11 @@ RIAPP.Application._coreModules.template = function (app) {
         Binding = app.modules.binding.Binding, baseElViewMod = app.modules.baseElView, BaseElView = baseElViewMod.BaseElView,
         BusyElView = baseElViewMod.BusyElView, TemplateElView = baseElViewMod.TemplateElView;
 
+    var _css = thisModule.css = {
+        templateContainer:'ria-template-container'
+    };
+    Object.freeze(_css);
+
     /*define Template class and register its type*/
     thisModule.Template = RIAPP.BaseObject.extend({
         _app:app,
@@ -4138,8 +4143,9 @@ RIAPP.Application._coreModules.template = function (app) {
                         deffered.reject(err);
                 });
 
+                self._el = tmpDiv = global.document.createElement("div");
+                tmpDiv.className =_css.templateContainer;
                 if (asyncLoad){
-                    self._el = tmpDiv = global.document.createElement("div");
                     self._appendIsBusy(tmpDiv);
                     deffered.done(function(){
                         self._removeIsBusy(tmpDiv);
@@ -4159,11 +4165,8 @@ RIAPP.Application._coreModules.template = function (app) {
                             self._unloadTemplate();
                             return;
                         }
-                        if (asyncLoad) {
-                            self._el.appendChild(tel);
-                        }
-                        self._el = tel;
-                        self._lfTime = self._app._bindTemplateElements(self._el);
+                        self._el.appendChild(tel);
+                        self._lfTime = self._app._bindTemplateElements(tel);
                         var telv = self._getTemplateElView();
                         if (!!telv) {
                             telv.templateLoaded(self);

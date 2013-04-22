@@ -29,7 +29,7 @@ namespace RIAPP.DataService.Mvc
             StringBuilder sb = this._rowStringBuilder;
             sb.Length = 0;
             sb.Append("{");
-            sb.AppendFormat(@"""key"":""{0}"",""values"":[", row.key);
+            sb.AppendFormat(@"""key"":""{0}"",""values"":[", System.Web.HttpUtility.JavaScriptStringEncode(row.key));
             int i = 0;
             Array.ForEach<string>(row.values,(s)=>{
                 if (i > 0)
