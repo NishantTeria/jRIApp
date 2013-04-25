@@ -4,6 +4,7 @@ if (!window['RIAPP']) {
 }
 
 RIAPP.ERRS = {
+    ERR_APP_NEED_JQUERY: 'The project is dependent on JQuery',
     ERR_ASSERTION_FAILED:'Assertion "{0}" check Has NOT been passed',
     ERR_DBSET_READONLY:'DbSet: {0} is readOnly and can not be edited',
     ERR_DBSET_INVALID_FIELDNAME:'DbSet: {0} has no field with the name: {1}',
