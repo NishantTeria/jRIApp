@@ -18,6 +18,7 @@ RIAPP.ERRS = {
     ERR_EVENT_INVALID:'Invalid event name: {0}',
     ERR_EVENT_INVALID_FUNC:'Invalid event function value',
     ERR_MODULE_UNDEFINED:'User module: {0} is undefined',
+    ERR_MODULE_ALREDY_REGISTERED: 'User module: {0} is already registered',
     ERR_PROP_NAME_EMPTY:'Empty property name parameter',
     ERR_GLOBAL_SINGLTON:'There must be only one instance of Global object',
     ERR_OBJ_ALREADY_REGISTERED:'Object with the name: {0} is already registered in the type system',

@@ -1357,7 +1357,7 @@ RIAPP.Global._coreModules.utils = function (global) {
         },
         _dtRangeToDate:function (str) {
             var dtParts = str.split('-');
-            var dt = new Date(parseInt(dtParts[0], 10), parseInt(dtParts[1], 10) - 1, dtParts[2]);
+            var dt = new Date(parseInt(dtParts[0], 10), parseInt(dtParts[1], 10) - 1, parseInt(dtParts[2],10));
             return dt;
         },
         checkDateRange:function (dt, range) {
@@ -1504,7 +1504,7 @@ RIAPP.Global._coreModules.utils = function (global) {
                     my:'top left',
                     at:'bottom right',
                     target:$el,
-                    viewport:$(global.window),
+                    viewport:global.$(global.window),
                     adjust:{
                         method:'flip none',
                         x:0,
@@ -1664,12 +1664,9 @@ RIAPP.Global._coreModules.utils = function (global) {
 
     //LifeTimeScope used to hold references to objects and destroys them all when LifeTimeScope is destroyed itself
     var LifeTimeScope = RIAPP.BaseObject.extend({
-        _cnt:0,
         _create:function () {
             this._super();
             this._objs = [];
-            LifeTimeScope._cnt += 1;
-            this._cnt = LifeTimeScope._cnt;
         },
         addObj:function (b) {
             if (this._objs.indexOf(b) < 0)
@@ -1690,7 +1687,7 @@ RIAPP.Global._coreModules.utils = function (global) {
             this._super();
         },
         toString:function () {
-            return 'LifeTimeScope '+this._cnt;
+            return 'LifeTimeScope';
         }
     }, null, function (obj) {
         thisModule.LifeTimeScope = obj;
