@@ -5705,6 +5705,7 @@ RIAPP.Application._coreModules.collection = function (app) {
                 this.sortLocalByFunc(fn_sort);
             },
             sortLocalByFunc:function (fn) {
+                var self = this;
                 this.waitForNotLoading(function () {
                     var self = this, cur = self.currentItem;
                     self.isLoading = true;
