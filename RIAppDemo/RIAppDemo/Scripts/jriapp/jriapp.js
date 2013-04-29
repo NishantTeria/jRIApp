@@ -4325,7 +4325,7 @@ RIAPP.Application._coreModules.template = function (app) {
 };
 
 RIAPP.Application._coreModules.mvvm = function (app) {
-    var thisModule = this, global = app.global, utils = global.utils;
+    var thisModule = this, global = app.global;
 
     thisModule.Command = RIAPP.BaseObject.extend({
         _app:app,
@@ -4334,7 +4334,6 @@ RIAPP.Application._coreModules.mvvm = function (app) {
             this._action = fn_action;
             this._thisObj = thisObj;
             this._canExecute = fn_canExecute;
-            this._isEnabled = true;
             this._objId = 'cmd' + this._app.getNewObjectID();
         },
         _getEventNames:function () {
@@ -4347,8 +4346,6 @@ RIAPP.Application._coreModules.mvvm = function (app) {
             return this._canExecute.apply(this._thisObj, [sender, param]);
         },
         execute:function (sender, param) {
-            if (!this._isEnabled)
-                return;
             if (!!this._action) {
                 this._action.apply(this._thisObj, [sender, param]);
             }
