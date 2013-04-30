@@ -7742,7 +7742,7 @@ RIAPP.Application._coreModules.db = function (app) {
             clearCache:function () {
                 var query = this._query;
                 if (!!query) {
-                    query._clearCache()();
+                    query._clearCache();
                 }
             },
             destroy:function () {
