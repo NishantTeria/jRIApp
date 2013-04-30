@@ -402,7 +402,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.6.1",
+        version:"1.2.6.2",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -7954,7 +7954,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 };
             },
             _getMethodParams:function (methodInfo, args) {
-                var methodName = methodInfo.methodName, data = { methodName:methodName, paramInfo:{parameters:[]}};
+                var self = this, methodName = methodInfo.methodName, data = { methodName:methodName, paramInfo:{parameters:[]}};
                 var i, pinfos = methodInfo.parameters, len = pinfos.length, pinfo, val, value;
                 if (!args)
                     args = {};
@@ -8052,7 +8052,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     return;
                 res.included.forEach(function (subset) {
                     var dbSet = self.getDbSet(subset.dbSetName);
-                    dbSet.fillItems(subset, true);
+                    dbSet.fillItems(subset);
                 });
             },
             _onLoaded:function (res, isPageChanged) {
@@ -8443,7 +8443,7 @@ RIAPP.Application._coreModules.db = function (app) {
             getAssociation:function (name) {
                 var f = this._assoc[name];
                 if (!f)
-                    throw new Error(RIAPP.utils.format(RIAPP.ERR_ASSOC_NAME_INVALID, name));
+                    throw new Error(RIAPP.utils.format(RIAPP.ERRS.ERR_ASSOC_NAME_INVALID, name));
                 return f();
             },
             //returns promise
@@ -8634,7 +8634,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 this._queryInf = {};
                 this._serviceUrl = null;
                 this._isInitialized = false;
-                this._isBusy = false;
+                this._isBusy = 0;
                 this._isSubmiting = false;
                 this._hasChanges = false;
                 this._super();
@@ -8733,6 +8733,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     throw new Error(RIAPP.ERRS.ERR_DATAVIEW_DATASRC_INVALID);
                 if (!opts.fn_filter || !utils.check_is.Function(opts.fn_filter))
                     throw new Error(RIAPP.ERRS.ERR_DATAVIEW_FILTER_INVALID);
+                this._objId = 'dvw'+this._app.getNewObjectID();
                 this._dataSource = opts.dataSource;
                 this._fn_filter = opts.fn_filter;
                 this._fn_sort = opts.fn_sort;
@@ -8988,7 +8989,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 ds.removeNSHandlers(self._objId);
             },
             appendItems:function (items) {
-                if (this._isDestroyed)
+                if (this._isDestroyCalled)
                     return [];
                 return this._fillItems({items:items, isPageChanged:false, clear:false, isAppend:true});
             },
@@ -9113,7 +9114,7 @@ RIAPP.Application._coreModules.db = function (app) {
                     if (this._options.enablePaging !== v) {
                         this._options.enablePaging = v;
                         this.raisePropertyChanged('isPagingEnabled');
-                        this._refresh();
+                        this._refresh(false);
                     }
                 },
                 get:function () {
@@ -9129,7 +9130,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 set:function (v) {
                     if (this._fn_filter !== v) {
                         this._fn_filter = v;
-                        this._refresh();
+                        this._refresh(false);
                     }
                 },
                 get:function () {
@@ -9140,7 +9141,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 set:function (v) {
                     if (this._fn_sort !== v) {
                         this._fn_sort = v;
-                        this._refresh();
+                        this._refresh(false);
                     }
                 },
                 get:function () {
@@ -9151,7 +9152,7 @@ RIAPP.Application._coreModules.db = function (app) {
                 set:function (v) {
                     if (this._fn_itemsProvider !== v) {
                         this._fn_itemsProvider = v;
-                        this._refresh();
+                        this._refresh(false);
                     }
                 },
                 get:function () {
