@@ -402,7 +402,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.6.3",
+        version:"1.2.6.4",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -8845,7 +8845,7 @@ RIAPP.Application._coreModules.db = function (app) {
                             if (!!self._fn_filter) {
                                 items = items.filter(self._fn_filter);
                             }
-                            self.appendItems([items]);
+                            self.appendItems(items);
                         }
                         break;
                     case CH_T.REMOVE:
