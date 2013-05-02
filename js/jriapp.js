@@ -402,7 +402,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.6.2",
+        version:"1.2.6.3",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -7508,7 +7508,7 @@ RIAPP.Application._coreModules.db = function (app) {
                         fetchedItems:fetchedItems, newItems:newItems, isPageChanged:data.isPageChanged });
                 }
                 this.moveFirst();
-                return {fetchedItems:fetchedItems, newItems:newItems, isPageChanged:data.isPageChanged };
+                return { fetchedItems: fetchedItems, newItems: newItems, isPageChanged: data.isPageChanged, outOfBandData: data.res.extraInfo };
             },
             _fillFromCache:function (data) {
                 data = utils.extend(false, {
@@ -7547,7 +7547,7 @@ RIAPP.Application._coreModules.db = function (app) {
                         fetchedItems:fetchedItems, newItems:fetchedItems, isPageChanged:data.isPageChanged });
                 }
                 this.moveFirst();
-                return {fetchedItems:fetchedItems, newItems:fetchedItems, isPageChanged:data.isPageChanged};
+                return {fetchedItems:fetchedItems, newItems:fetchedItems, isPageChanged:data.isPageChanged, outOfBandData:null};
             },
             _commitChanges:function (rows) {
                 var self = this, COLL_CT = COLL_CHANGE_TYPE;
@@ -8339,7 +8339,6 @@ RIAPP.Application._coreModules.db = function (app) {
                             if (loadPageCount > 1 && isPagingEnabled) {
                                 if (query._isPageCached(pageIndex)) {
                                     loadRes = self._loadFromCache(query, isPageChanged);
-                                    loadRes.outOfBandData = null;
                                     //loadRes is in the format {fetchedItems:[], newItems:[], isPageChanged:bool, outOfBandData: object }
                                     fn_onOK(loadRes);
                                     return;
@@ -8407,7 +8406,6 @@ RIAPP.Application._coreModules.db = function (app) {
                                                     }
                                                 }
                                                 loadRes = self._onLoaded(getDataResult, isPageChanged);
-                                                loadRes.outOfBandData = res.extraInfo;
                                                 fn_onOK(loadRes);
                                             }
                                             catch (ex) {
