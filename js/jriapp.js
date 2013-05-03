@@ -4869,6 +4869,10 @@ RIAPP.Application._coreModules.collection = function (app) {
                 this._vals = {};
                 this._notEdited = true;
             },
+            _getEventNames:function () {
+                var base_events = this._super();
+                return ['errors_changed'].concat(base_events);
+            },
             _onError:function (error, source) {
                 var isHandled = this._super(error, source);
                 if (!isHandled) {
@@ -5025,6 +5029,9 @@ RIAPP.Application._coreModules.collection = function (app) {
                 }
                 return res;
             },
+            _onErrorsChanged:function (args) {
+                this.raiseEvent('errors_changed', args);
+            },
             _resetIsNew:function () {
             },
             getFieldInfo:function (fieldName) {
@@ -5032,6 +5039,9 @@ RIAPP.Application._coreModules.collection = function (app) {
             },
             getFieldNames:function () {
                 return this._collection.getFieldNames();
+            },
+            addOnItemErrorsChanged:function (fn, namespace) {
+                this.addHandler('errors_changed', fn, namespace);
             },
             getFieldErrors:function (fieldName) {
                 var itemErrors = this._collection._getErrors(this);
