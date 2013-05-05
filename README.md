@@ -9,7 +9,15 @@ You can watch video of the demo on <a href="http://youtu.be/CxWcC2O8u-k" target=
 You can discuss the framework on <a href="https://groups.google.com/forum/#!forum/jriapp-framework" target="_blank">Google Groups</a>
 <p style="color:blue">the current version of the framework is updated to 1.2.6.4, see CHANGES.txt for details.</p>
 <p>The demo application now includes Single Page Application Demo page!</p>
-
+<b>
+This framework is currently porting to typescript. The conversion is nearing to completion.
+The work with complex javascript frameworks (this included) showed  that javascript language is too low level to write those frameworks.
+The maintenance and the use of the javascript frameworks is greatly impeded by its dynamic nature. You can not write so many tests to
+check all possible reference checks, variables compatibility, arguments checks and etc. You need always to consult docs to check what arguments
+and what types functions need.
+Typescript resolves a lot of problems, checking references at compile time.
+</b>
+<br/>
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
 It consists of two parts – the client and the server parts. 
 The client part was written in javascript language. 

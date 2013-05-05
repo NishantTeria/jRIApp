@@ -11196,7 +11196,6 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._extcol = null;
                 this._div.get(0).cell = null;
                 this._div = null;
-                this._item = null;
                 this._el = null;
                 this._grid = null;
                 this._super();
@@ -11519,6 +11518,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
                 this._refreshGrid(); //fills all rows
                 this._updateColsDim();
                 this._onDSCurrentChanged();
+                global._onGridAdded(this);
             },
             _getEventNames:function () {
                 var base_events = this._super();
@@ -12207,7 +12207,7 @@ RIAPP.Application._coreModules.datagrid = function (app) {
             destroy:function () {
                 if (this._isDestroyed)
                     return;
-                
+                global._onGridRemoved(this);
                 if (!!this._details) {
                     this._details.destroy();
                     this._details = null;
@@ -13295,6 +13295,11 @@ RIAPP.Application._coreModules.stackpanel = function (app) {
                 },
                 get:function () {
                     return this._dataSource;
+                }
+            },
+            uniqueID:{
+                get:function () {
+                    return this._objId;
                 }
             },
             currentItem:{
