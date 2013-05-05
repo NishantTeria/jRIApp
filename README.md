@@ -12,10 +12,10 @@ You can discuss the framework on <a href="https://groups.google.com/forum/#!foru
 <b>
 This framework is currently porting to typescript. The conversion is nearing to completion.
 The work with complex javascript frameworks (this included) showed  that javascript language is too low level to write those frameworks.
-The maintenance and the use of the javascript frameworks is greatly impeded by its dynamic nature. You can not write so many tests to
-check all possible reference checks, variables compatibility, arguments checks and etc. You need always to consult docs to check what arguments
-and what types functions need.
-Typescript resolves a lot of problems, checking references at compile time.
+The maintenance and the use of the javascript frameworks is greatly impeded by javascript dynamic nature. You can not write so many tests to
+check all possible reference checks, variables compatibility, arguments checks and etc. 
+Working with javascript frameworks you always need to consult docs to check what arguments and what types the functions need.
+Typescript solves a lot of problems by checking references at compile time.
 </b>
 <br/>
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
