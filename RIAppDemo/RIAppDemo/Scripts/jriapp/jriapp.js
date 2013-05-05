@@ -402,7 +402,7 @@ RIAPP._app_modules = ['converter','parser', 'baseElView', 'binding', 'template',
 RIAPP.css_riaTemplate = 'ria-template';
 
 RIAPP.Global = RIAPP.BaseObject.extend({
-        version:"1.2.6.4",
+        version:"1.2.6.5",
         _TEMPLATES_SELECTOR:['section.', RIAPP.css_riaTemplate].join(''),
         _TEMPLATE_SELECTOR:'*[data-role="template"]',
         __coreModules:{}, //static
@@ -13791,12 +13791,12 @@ RIAPP.Application._coreModules.listbox = function (app) {
             isEnabled:{
                 set:function (v) {
                     if (v !== this.isEnabled) {
-                        this._setIsEnabled(this.$el, v);
+                        this._setIsEnabled(this._el, v);
                         this.raisePropertyChanged('isEnabled');
                     }
                 },
                 get:function () {
-                    return this._getIsEnabled(this.$el);
+                    return this._getIsEnabled(this._el);
                 }
             },
             el:{
