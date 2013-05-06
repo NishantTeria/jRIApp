@@ -3197,6 +3197,9 @@ RIAPP.Application._coreModules.baseElView = function (app) {
                 this._super(options);
                 this._command = null;
                 this._commandParam = null;
+                if (!this.isEnabled){
+                    this.$el.addClass('disabled');
+                }
             },
             destroy:function () {
                 this.command = null;
@@ -14802,11 +14805,11 @@ RIAPP.Application._coreModules.elview = function (app) {
                         self.html = null;
                         $img = global.$(new Image()).attr('src', src).mouseenter(
                             function (e) {
-                                if (self._isEnabled)
+                                if (self.isEnabled)
                                     global.$(this).css("opacity", 0.5);
                             }).mouseout(
                             function (e) {
-                                if (self._isEnabled)
+                                if (self.isEnabled)
                                     global.$(this).css("opacity", 1.0);
                             }).appendTo($a);
                         this._image = $img.get(0);
@@ -15230,8 +15233,8 @@ RIAPP.Application._coreModules.content = function (app) {
     var BindingContent = baseContentMod.BindingContent;
 
     var DateContent = BindingContent.extend({
-        _create:function (parentEl, options, dctx) {
-            this._super(parentEl, options, dctx);
+        _create:function (parentEl, options, dctx, isEditing) {
+            this._super(parentEl, options, dctx, isEditing);
             this._fn_cleanup = null;
         },
         _getBindingOption:function (bindingInfo, tgt, dctx, targetPath) {
@@ -15494,8 +15497,8 @@ RIAPP.Application._coreModules.content = function (app) {
                 this._valBinding = null;
                 this._listBox = null;
                 this._isListBoxCachedExternally = false;
-                this._valBinding = null;
                 this._listBinding = null;
+                this._value = null;
             },
             _getEventNames:function () {
                 var base_events = this._super();
