@@ -6,16 +6,10 @@ jRIApp
 You can watch video of the demo on <a href="http://youtu.be/CxWcC2O8u-k" target="_blank">YouTube Main</a> and
 <a href="http://youtu.be/m2lxFWhJghA" target="_blank">YouTube SPA</a>
 <br/>
-You can discuss the framework on <a href="https://groups.google.com/forum/#!forum/jriapp-framework" target="_blank">Google Groups</a>
 <p style="color:blue">the current version of the framework is updated to 1.2.6.5, see CHANGES.txt for details.</p>
-<p>The demo application now includes Single Page Application Demo page!</p>
 <b>
-This framework is currently porting to typescript. The conversion is nearing to completion.
-The work with complex javascript frameworks (this included) showed  that javascript language is too low level to write those frameworks.
-The maintenance and the use of the javascript frameworks is greatly impeded by javascript dynamic nature. You can not write so many tests to
-check all possible reference checks, variables compatibility, arguments checks and etc. 
-Working with javascript frameworks you always need to consult docs to check what arguments and what types the functions need.
-Typescript solves a lot of problems by checking references at compile time.
+This framework is ported to typescript. You can go to <a href="https://github.com/BBGONE/jRIAppTS" target="_blank">jRIAppTS framework</a>
+to have the typescript version and updated demo. Now i will update only typescript version, this one is for history.
 </b>
 <br/>
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
@@ -57,8 +51,6 @@ I could not find a framework for the purpose with so many requirements as for bu
 so i chose to create it myself. 
 And one more thing, i liked silverlight, with its superb databinding capabilities, so i mimicked them as much as i could in the framework.
 </b>
-
-You are welcome to use it in your applications.
 
 --
 Maxim V. Tsapov<br/>
