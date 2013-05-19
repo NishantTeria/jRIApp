@@ -8,8 +8,8 @@ You can watch video of the demo on <a href="http://youtu.be/CxWcC2O8u-k" target=
 <br/>
 <p style="color:blue">the current version of the framework is updated to 1.2.6.5, see CHANGES.txt for details.</p>
 <b>
-This framework is ported to typescript. You can go to <a href="https://github.com/BBGONE/jRIAppTS" target="_blank">jRIAppTS framework</a>
-to have the typescript version and updated demo. Now i will update only typescript version, this one is for history.
+This framework have been ported ported to typescript. You can go to <a href="https://github.com/BBGONE/jRIAppTS" target="_blank">jRIAppTS framework</a>
+to have the typescript's version and updated demo. Now i will update only typescript's version, this one is for history.
 </b>
 <br/>
 jRIApp – is application framework for developing rich internet applications - RIA’s. 
