@@ -4533,7 +4533,7 @@ RIAPP.Application._coreModules.baseContent = function (app) {
                     this._lfScope = null;
                 }
                 if (!!this._el) {
-                    global.$(this._el).remove();
+                    utils.removeNode(this._el);
                     this._el = null;
                 }
                 this._tgt = null;
@@ -15513,8 +15513,10 @@ RIAPP.Application._coreModules.content = function (app) {
                 this.raiseEvent('need_listbox', args);
                 if (!!args.listBox) {
                     this._isListBoxCachedExternally = true;
-                    return args.listBox;
+                    this._listBox = args.listBox;
                 }
+                if (!!this._listBox)
+                    return this._listBox;
                 //else proceed creating new listbox
                 var app = this._app, dataSource = app.parser.resolvePath(app, lookUpOptions.dataSource),
                     options = {valuePath:lookUpOptions.valuePath, textPath:lookUpOptions.textPath};
@@ -15526,7 +15528,8 @@ RIAPP.Application._coreModules.content = function (app) {
                 //this allows to cache listBox externally
                 this.raiseEvent('listbox_created', args);
                 this._isListBoxCachedExternally = args.isCachedExternally;
-                return listBox;
+                this._listBox = listBox;
+                return this._listBox;
             },
             _getListBoxElView:function (el, options) {
                 var elView;
@@ -15566,11 +15569,9 @@ RIAPP.Application._coreModules.content = function (app) {
             _createTargetElement:function () {
                 var el;
                 if (this._isEditing && this._canBeEdited()) {
-                    if (!this._listBox) {
-                        this._listBox = this._getListBox();
-                    }
-                    this._listBinding = this._bindToList();
-                    el = this._listBox.el;
+                    var listBox = this._getListBox();
+                    this._listBinding = this._bindToList(listBox);
+                    el = listBox.el;
                 }
                 else {
                     if (!this._spanView) {
@@ -15584,7 +15585,7 @@ RIAPP.Application._coreModules.content = function (app) {
             },
             _cleanUp:function () {
                 if (!!this._el) {
-                    global.$(this._el).remove();
+                    utils.removeNode(this._el);
                     this._el = null;
                 }
                 if (!!this._listBinding) {
@@ -15618,11 +15619,11 @@ RIAPP.Application._coreModules.content = function (app) {
                 };
                 return Binding.create(options);
             },
-            _bindToList:function () {
+            _bindToList:function (listBox) {
                 if (!this._options.fieldName)
                     return null;
 
-                var options = { target:this._getListBox(), source:this._dctx,
+                var options = { target:listBox, source:this._dctx,
                     targetPath:'selectedValue', sourcePath:this._options.fieldName, mode:"TwoWay",
                     converter:null, converterParam:null, isSourceFixed:false
                 };
